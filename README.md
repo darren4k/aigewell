@@ -17,6 +17,15 @@ AI-powered home safety assessment platform for aging in place.
 - ✅ Alert and notification system
 - ✅ D1 database integration for data persistence
 - ✅ Responsive UI with TailwindCSS
+- ✅ **NEW: Professional PT/OT Evaluation System**
+  - Berg Balance Scale (14 items, 0-56 scoring)
+  - Timed Up and Go (TUG) Test
+  - Tinetti Gait and Balance Assessment
+  - Activities of Daily Living (ADL) Assessment
+  - Home Safety Evaluation Checklist
+  - Evidence-based fall risk calculations
+  - Clinical recommendations engine
+  - CPT code mapping for insurance billing
 
 ## 🎯 Functional Endpoints
 
@@ -25,6 +34,20 @@ AI-powered home safety assessment platform for aging in place.
 - Navigation: Dashboard | Room Assessment | Safety Plans | Equipment | Caregivers
 
 ### API Endpoints
+
+#### PT/OT Professional Endpoints
+- `GET /api/ptot/templates` - Get all assessment templates
+- `POST /api/ptot/evaluations` - Create new evaluation
+- `GET /api/ptot/evaluations/:id` - Get evaluation with all assessments
+- `POST /api/ptot/evaluations/:id/berg-balance` - Submit Berg Balance Scale
+- `POST /api/ptot/evaluations/:id/tug-test` - Submit TUG Test results
+- `POST /api/ptot/evaluations/:id/tinetti` - Submit Tinetti Assessment
+- `POST /api/ptot/evaluations/:id/adl` - Submit ADL Assessment
+- `POST /api/ptot/evaluations/:id/home-safety` - Submit Home Safety Checklist
+- `GET /api/ptot/evaluations/:id/report` - Generate comprehensive report
+- `GET /api/ptot/providers/:providerId/evaluations` - Get provider's evaluations
+
+#### Original Endpoints
 - `GET /api/health` - Service health check
 - `POST /api/analyze-room` - Analyze room photo for hazards (multipart/form-data: image, roomType, userId)
 - `GET /api/assessments/:userId` - Get user's assessments
@@ -62,6 +85,8 @@ AI-powered home safety assessment platform for aging in place.
 ## 📊 Data Architecture
 
 ### Database Tables (D1)
+
+#### Core Tables
 - `users` - Seniors, caregivers, PT/OT providers
 - `assessments` - Room hazard analysis results
 - `safety_plans` - Phased improvement plans
@@ -69,6 +94,18 @@ AI-powered home safety assessment platform for aging in place.
 - `caregivers` - Caregiver relationships and permissions
 - `alerts` - Notifications and warnings
 - `appointments` - PT/OT consultation scheduling
+
+#### PT/OT Evaluation Tables
+- `assessment_templates` - Standardized test templates with CPT codes
+- `professional_evaluations` - Main evaluation records
+- `assessment_scores` - Individual test scores and risk levels
+- `berg_balance_items` - Berg Balance Scale detailed scoring
+- `tug_test_results` - Timed Up and Go test data
+- `tinetti_assessment` - Tinetti gait and balance scores
+- `adl_assessment` - Activities of Daily Living assessment
+- `home_safety_checklist` - Environmental hazard evaluation
+- `clinical_recommendations` - Evidence-based recommendations
+- `provider_credentials` - Provider licensing and certifications
 
 ### Storage Services
 - **D1 Database**: Relational data (users, assessments, plans)
