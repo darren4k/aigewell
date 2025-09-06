@@ -818,6 +818,16 @@ async function generateNewPlan() {
     }
 }
 
+// PT/OT Dashboard integration
+function showPTOTDashboard() {
+    if (typeof initPTOTDashboard === 'function') {
+        initPTOTDashboard();
+    } else {
+        console.error('PT/OT Dashboard not loaded');
+        alert('PT/OT Dashboard is loading, please try again.');
+    }
+}
+
 async function addCaregiver() {
     const email = document.getElementById('caregiverEmail').value;
     const relationship = document.getElementById('caregiverRelation').value;
