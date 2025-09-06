@@ -87,7 +87,7 @@ function renderApp() {
 
     // Add styles
     const style = document.createElement('style');
-    style.textContent = \`
+    style.textContent = `
         .nav-btn {
             padding: 12px 20px;
             font-weight: 500;
@@ -103,7 +103,7 @@ function renderApp() {
             color: #7c3aed;
             border-bottom-color: #7c3aed;
         }
-    \`;
+    `;
     document.head.appendChild(style);
 
     showView(currentView);

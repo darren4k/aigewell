@@ -3,9 +3,9 @@ import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-pages'
 
 type Bindings = {
-  DB: D1Database
-  KV: KVNamespace
-  R2: R2Bucket
+  DB?: D1Database
+  KV?: KVNamespace
+  R2?: R2Bucket
   OPENAI_API_KEY?: string
 }
 
