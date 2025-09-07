@@ -30,6 +30,7 @@ CREATE TABLE users (
     provider_type TEXT CHECK (provider_type IN ('pt', 'ot', 'physician', 'nurse')),
     license_number TEXT,
     specialties TEXT, -- JSON array of specialties
+    stripe_customer_id TEXT, -- Stripe customer ID for payment processing
     is_active BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

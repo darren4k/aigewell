@@ -1,0 +1,26 @@
+{
+  "require": ["tests/setup/test-setup.js"],
+  "spec": "tests/**/*.test.js",
+  "timeout": 30000,
+  "reporter": "spec",
+  "recursive": true,
+  "exit": true,
+  "bail": false,
+  "grep": "",
+  "parallel": false,
+  "jobs": 1,
+  "retries": 0,
+  "slow": 2000,
+  "ui": "bdd",
+  "watch": false,
+  "watchFiles": ["tests/**/*.js", "src/**/*.js", "server.js"],
+  "ignore": ["node_modules/**/*"],
+  "extension": ["js"],
+  "checkLeaks": true,
+  "globals": ["expect", "describe", "it", "before", "after", "beforeEach", "afterEach"],
+  "color": true,
+  "reporter-options": {
+    "colors": true,
+    "inline-diffs": true
+  }
+}

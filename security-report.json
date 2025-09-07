@@ -1,0 +1,497 @@
+{
+  "summary": {
+    "critical": 7,
+    "high": 28,
+    "medium": 29,
+    "low": 0,
+    "total": 64
+  },
+  "hipaaCompliance": {
+    "encryption": false,
+    "auditLogging": false,
+    "accessControls": false,
+    "dataRetention": false,
+    "integrityControls": false
+  },
+  "issues": {
+    "critical": [
+      {
+        "file": "src/auth.ts",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      },
+      {
+        "file": "src/clinical-assessment-prototype.ts",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      },
+      {
+        "file": "src/clinical-assessment.ts",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      },
+      {
+        "file": "src/ptot-evaluation.ts",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      },
+      {
+        "file": "./server.js",
+        "type": "Hardcoded Secret",
+        "line": 20,
+        "code": "SECRET = 'your-super-secret-jwt-key-change-in-production'",
+        "recommendation": "Move to environment variables or secure vault"
+      },
+      {
+        "file": "./server.js",
+        "type": "HIPAA: Missing Audit Logging",
+        "line": "Multiple",
+        "code": "Database operations without audit trail",
+        "recommendation": "Implement comprehensive audit logging for all PHI access"
+      }
+    ],
+    "high": [
+      {
+        "file": "public/static/accessibility.js",
+        "type": "XSS Vulnerability",
+        "line": 44,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/accessibility.js",
+        "type": "XSS Vulnerability",
+        "line": 44,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/accessibility.js",
+        "type": "XSS Vulnerability",
+        "line": 44,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 22,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/app.js",
+        "type": "XSS Vulnerability",
+        "line": 782,
+        "code": "innerHTML = a",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-assessment-ui.js",
+        "type": "XSS Vulnerability",
+        "line": 21,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-assessment-ui.js",
+        "type": "XSS Vulnerability",
+        "line": 21,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-assessment-ui.js",
+        "type": "XSS Vulnerability",
+        "line": 21,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-assessment-wizard.js",
+        "type": "XSS Vulnerability",
+        "line": 58,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-assessment-wizard.js",
+        "type": "XSS Vulnerability",
+        "line": 58,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 9,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 9,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/clinical-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 9,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 28,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 28,
+        "code": "innerHTML = ",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 490,
+        "code": "innerHTML = r",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 490,
+        "code": "innerHTML = r",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 490,
+        "code": "innerHTML = r",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      },
+      {
+        "file": "public/static/ptot-dashboard.js",
+        "type": "XSS Vulnerability",
+        "line": 564,
+        "code": "innerHTML = p",
+        "recommendation": "Sanitize user input and use textContent instead of innerHTML"
+      }
+    ],
+    "medium": [
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 42,
+        "code": "app.get('/api/health', (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 47,
+        "code": "app.post('/api/analyze-room', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 97,
+        "code": "app.get('/api/assessments/:userId', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 111,
+        "code": "app.post('/api/generate-plan', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 136,
+        "code": "app.get('/api/plans/:userId', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 150,
+        "code": "app.patch('/api/plans/:planId/progress', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 165,
+        "code": "app.get('/api/equipment/:planId', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 176,
+        "code": "app.post('/api/appointments', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 207,
+        "code": "app.get('/api/alerts/:userId', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 222,
+        "code": "app.post('/api/clinical-assessments', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 263,
+        "code": "app.get('/api/clinical-assessments/:userId', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 277,
+        "code": "app.patch('/api/alerts/:alertId/read', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 289,
+        "code": "app.post('/api/caregivers', async (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Input Validation",
+        "line": 467,
+        "code": "app.get('/', (c)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "src/index.tsx",
+        "type": "Missing Rate Limiting",
+        "line": 47,
+        "code": "API endpoints without rate limiting",
+        "recommendation": "Implement rate limiting to prevent abuse"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 67,
+        "code": "app.post('/api/auth/register', async (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 153,
+        "code": "app.post('/api/auth/login', async (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 208,
+        "code": "app.get('/api/auth/profile', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 243,
+        "code": "app.post('/api/auth/logout', (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 250,
+        "code": "app.post('/api/analyze-room', authenticateToken, upload.single('image')",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 296,
+        "code": "app.get('/api/assessments/:userId', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 314,
+        "code": "app.post('/api/clinical-assessments', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 348,
+        "code": "app.get('/api/clinical-assessments/:userId', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 368,
+        "code": "app.post('/api/appointments', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 392,
+        "code": "app.get('/api/appointments/:userId', authenticateToken, (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 410,
+        "code": "app.get('/api/providers', (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Input Validation",
+        "line": 528,
+        "code": "app.get('/', (req, res)",
+        "recommendation": "Add input validation middleware"
+      },
+      {
+        "file": "./server.js",
+        "type": "HIPAA: No Data Retention Policy",
+        "line": "N/A",
+        "code": "Missing data retention implementation",
+        "recommendation": "Implement data retention and purging policies"
+      },
+      {
+        "file": "./server.js",
+        "type": "Missing Rate Limiting",
+        "line": 67,
+        "code": "API endpoints without rate limiting",
+        "recommendation": "Implement rate limiting to prevent abuse"
+      }
+    ],
+    "low": [],
+    "info": []
+  },
+  "recommendations": {
+    "immediate": [
+      "Implement comprehensive audit logging for all PHI access",
+      "Add encryption for data at rest and in transit",
+      "Replace hardcoded credentials with environment variables",
+      "Implement input validation on all API endpoints",
+      "Add rate limiting to prevent API abuse"
+    ],
+    "shortTerm": [
+      "Implement automated security testing in CI/CD pipeline",
+      "Add SAST (Static Application Security Testing) tools",
+      "Configure CSP (Content Security Policy) headers",
+      "Implement session timeout and secure cookie flags",
+      "Add intrusion detection and monitoring"
+    ],
+    "longTerm": [
+      "Obtain HIPAA compliance certification",
+      "Implement zero-trust architecture",
+      "Add end-to-end encryption for all communications",
+      "Implement comprehensive disaster recovery plan",
+      "Regular third-party security audits"
+    ]
+  }
+}

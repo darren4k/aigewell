@@ -27,7 +27,18 @@
     "ios:dev": "npm run cap:build && npx cap open ios",
     "android:dev": "npm run cap:build && npx cap open android",
     "ios:build": "npm run cap:build && npx cap build ios",
-    "android:build": "npm run cap:build && npx cap build android"
+    "android:build": "npm run cap:build && npx cap build android",
+    "test": "mocha tests/**/*.test.js --require tests/setup/test-setup.js --timeout 30000",
+    "test:unit": "mocha tests/unit/**/*.test.js --require tests/setup/test-setup.js --timeout 10000",
+    "test:integration": "mocha tests/integration/**/*.test.js --require tests/setup/test-setup.js --timeout 20000",
+    "test:e2e": "mocha tests/e2e/**/*.test.js --require tests/setup/test-setup.js --timeout 60000",
+    "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov mocha tests/**/*.test.js --require tests/setup/test-setup.js --timeout 30000",
+    "test:watch": "mocha tests/**/*.test.js --require tests/setup/test-setup.js --timeout 30000 --watch",
+    "test:auth": "mocha tests/integration/auth.test.js --require tests/setup/test-setup.js --timeout 15000",
+    "test:ai": "mocha tests/integration/ai-analysis.test.js --require tests/setup/test-setup.js --timeout 20000",
+    "test:appointments": "mocha tests/integration/appointment-booking.test.js --require tests/setup/test-setup.js --timeout 15000",
+    "test:payments": "mocha tests/integration/payment-processing.test.js --require tests/setup/test-setup.js --timeout 15000",
+    "test:journey": "mocha tests/e2e/full-user-journey.test.js --require tests/setup/test-setup.js --timeout 60000"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
@@ -55,11 +66,20 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "openai": "^5.19.1",
+    "stripe": "^18.5.0",
+    "uuid": "^12.0.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
     "@hono/vite-build": "^1.2.0",
     "@hono/vite-dev-server": "^0.18.2",
+    "c8": "^10.1.3",
+    "chai": "^6.0.1",
+    "form-data": "^4.0.4",
+    "mocha": "^11.7.2",
+    "nyc": "^17.1.0",
+    "supertest": "^7.1.4",
     "vite": "^6.3.5",
     "wrangler": "^4.4.0"
   }

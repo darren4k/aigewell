@@ -17,6 +17,13 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Import AI analysis service
+import aiAnalysisService from './src/services/ai-analysis.js';
+
+// Import services
+import AppointmentBookingService from './src/services/appointment-service.js';
+import paymentService from './src/services/payment-service.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -26,6 +33,9 @@ const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('he
 
 // Database setup
 const db = new Database('healthcare.db');
+
+// Initialize appointment service after db is available
+const appointmentService = new AppointmentBookingService(db);
 
 // Role-based permissions helper
 function getRolePermissions(role) {
@@ -374,49 +384,104 @@ app.post('/api/auth/logout', (req, res) => {
 
 // ===== ASSESSMENT ROUTES =====
 
-// Analyze room photo
-app.post('/api/analyze-room', authenticateToken, upload.single('image'), (req, res) => {
+// Analyze room photo with real AI
+app.post('/api/analyze-room', authenticateToken, auditLog('ROOM_ANALYSIS', 'assessments'), upload.single('image'), async (req, res) => {
     const { roomType } = req.body;
     const userId = req.user.userId;
+    const userRole = req.user.role;
 
     if (!req.file) {
         return res.status(400).json({ error: 'No image provided' });
     }
 
     try {
-        // Mock AI analysis (replace with real AI service)
-        const hazards = analyzeRoomHazards(roomType);
-        const riskScore = calculateRiskScore(hazards);
-        const recommendations = getRecommendations(hazards);
+        // Get user context for personalized analysis
+        const userContext = {
+            user_id: userId,
+            role: userRole,
+            room_type: roomType,
+            timestamp: new Date().toISOString()
+        };
 
-        // Store assessment in database
+        // Use real AI analysis service
+        console.log(`Starting AI analysis for ${roomType} by user ${userId}`);
+        const analysisResult = await aiAnalysisService.analyzeRoomImage(
+            req.file.path,
+            roomType,
+            userContext
+        );
+
+        // Store comprehensive assessment in database
         const result = db.prepare(`
             INSERT INTO assessments (
                 user_id, room_type, image_url, hazards_detected, 
                 risk_score, ai_analysis, status, created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, 'analyzed', datetime('now'), datetime('now'))
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         `).run(
             userId,
             roomType,
             req.file.path,
-            JSON.stringify(hazards),
-            riskScore,
-            JSON.stringify({ hazards, recommendations })
+            JSON.stringify(analysisResult.hazards || []),
+            analysisResult.risk_score || 50,
+            JSON.stringify(analysisResult),
+            analysisResult.success ? 'analyzed' : 'analysis_failed'
         );
 
+        // Log analysis completion
+        console.log(`AI analysis completed for assessment ${result.lastInsertRowid}: ${analysisResult.success ? 'SUCCESS' : 'FAILED'}`);
+
+        // Return comprehensive results
         res.json({
+            success: analysisResult.success,
             assessmentId: result.lastInsertRowid,
             roomType,
-            hazards,
-            riskScore,
-            recommendations,
-            imageUrl: req.file.path
+            hazards: analysisResult.hazards || [],
+            riskScore: analysisResult.risk_score || 50,
+            recommendations: analysisResult.recommendations || [],
+            analysis: {
+                confidence: analysisResult.confidence_level,
+                model_used: analysisResult.ai_model,
+                processing_time: analysisResult.analysis_timestamp,
+                analysis_id: analysisResult.analysis_id,
+                is_fallback: analysisResult.is_fallback || false
+            },
+            imageUrl: req.file.path,
+            message: analysisResult.success 
+                ? 'Room analysis completed successfully using AI vision' 
+                : 'Analysis completed using fallback method',
+            error_details: analysisResult.error_details || null
         });
 
     } catch (error) {
-        console.error('Analysis error:', error);
-        res.status(500).json({ error: 'Failed to analyze image' });
+        console.error('Room analysis error:', error);
+        
+        // Log error for monitoring
+        try {
+            db.prepare(`
+                INSERT INTO assessments (
+                    user_id, room_type, image_url, hazards_detected, 
+                    risk_score, ai_analysis, status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            `).run(
+                userId,
+                roomType,
+                req.file.path,
+                JSON.stringify([]),
+                0,
+                JSON.stringify({ error: error.message }),
+                'analysis_error'
+            );
+        } catch (dbError) {
+            console.error('Failed to log error to database:', dbError);
+        }
+
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to analyze room image',
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+            fallback_available: true
+        });
     }
 });
 
@@ -492,50 +557,197 @@ app.get('/api/clinical-assessments/:userId', authenticateToken, (req, res) => {
 
 // ===== APPOINTMENT ROUTES =====
 
-// Book appointment
-app.post('/api/appointments', authenticateToken, (req, res) => {
-    const { providerId, scheduledAt, type, duration = 60, notes } = req.body;
-    const userId = req.user.userId;
-
+// Search providers
+app.get('/api/providers/search', authenticateToken, auditLog('PROVIDER_SEARCH', 'providers'), async (req, res) => {
     try {
-        const result = db.prepare(`
-            INSERT INTO appointments (
-                user_id, provider_id, scheduled_at, duration_minutes,
-                type, status, notes, created_at, updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, 'scheduled', ?, datetime('now'), datetime('now'))
-        `).run(userId, providerId, scheduledAt, duration, type, notes);
+        const searchCriteria = {
+            specialty: req.query.specialty,
+            location: req.query.location,
+            date: req.query.date,
+            time_preference: req.query.time_preference,
+            insurance: req.query.insurance,
+            max_distance: parseInt(req.query.max_distance) || 50
+        };
 
-        res.json({ 
-            success: true, 
-            appointmentId: result.lastInsertRowid 
+        const providers = await appointmentService.searchProviders(searchCriteria);
+        
+        res.json({
+            success: true,
+            providers,
+            search_criteria: searchCriteria,
+            total_found: providers.length
         });
     } catch (error) {
-        console.error('Appointment booking error:', error);
-        res.status(500).json({ error: 'Failed to book appointment' });
+        console.error('Provider search error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to search providers' 
+        });
     }
 });
 
-// Get user appointments
-app.get('/api/appointments/:userId', authenticateToken, (req, res) => {
-    const userId = req.params.userId;
+// Get provider availability
+app.get('/api/providers/:providerId/availability', authenticateToken, async (req, res) => {
+    try {
+        const { providerId } = req.params;
+        const days = parseInt(req.query.days) || 14;
+        
+        const availability = await appointmentService.getProviderAvailability(providerId, days);
+        
+        res.json({
+            success: true,
+            provider_id: providerId,
+            availability,
+            total_slots: availability.length
+        });
+    } catch (error) {
+        console.error('Availability check error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to get availability' 
+        });
+    }
+});
+
+// Book appointment with real functionality
+app.post('/api/appointments', authenticateToken, auditLog('APPOINTMENT_BOOKING', 'appointments'), async (req, res) => {
+    const { 
+        provider_id, 
+        scheduled_at, 
+        appointment_type, 
+        duration = 60, 
+        notes = '',
+        insurance_info = null,
+        contact_preference = 'phone'
+    } = req.body;
+    
+    const patient_id = req.user.userId;
+
+    // Validate required fields
+    if (!provider_id || !scheduled_at || !appointment_type) {
+        return res.status(400).json({ 
+            success: false,
+            error: 'Missing required fields: provider_id, scheduled_at, appointment_type' 
+        });
+    }
 
     try {
-        const appointments = db.prepare(`
-            SELECT * FROM appointments 
-            WHERE user_id = ? 
-            ORDER BY scheduled_at ASC
-        `).all(userId);
+        const bookingResult = await appointmentService.bookAppointment({
+            patient_id,
+            provider_id,
+            scheduled_at,
+            appointment_type,
+            duration,
+            notes,
+            insurance_info,
+            contact_preference
+        });
 
-        res.json({ appointments });
+        res.status(bookingResult.success ? 201 : 400).json(bookingResult);
     } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-        res.status(500).json({ error: 'Failed to fetch appointments' });
+        console.error('Appointment booking error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to book appointment',
+            details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
 });
 
-// Get providers
-app.get('/api/providers', (req, res) => {
+// Get user appointments with enhanced data
+app.get('/api/appointments/:userId', authenticateToken, auditLog('GET_APPOINTMENTS', 'appointments'), (req, res) => {
+    const userId = req.params.userId;
+    const userRole = req.user.role;
+    const status = req.query.status;
+
+    // Ensure user can only access their own appointments (unless provider)
+    if (userId !== req.user.userId.toString() && userRole !== 'provider') {
+        return res.status(403).json({ 
+            success: false,
+            error: 'Access denied - can only view own appointments' 
+        });
+    }
+
+    try {
+        const appointments = appointmentService.getUserAppointments(userId, userRole, status);
+        
+        res.json({
+            success: true,
+            appointments,
+            user_role: userRole,
+            filtered_by_status: status || 'all',
+            total_count: appointments.length
+        });
+    } catch (error) {
+        console.error('Failed to fetch appointments:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch appointments' 
+        });
+    }
+});
+
+// Reschedule appointment
+app.patch('/api/appointments/:appointmentId/reschedule', authenticateToken, auditLog('RESCHEDULE_APPOINTMENT', 'appointments'), async (req, res) => {
+    const { appointmentId } = req.params;
+    const { new_scheduled_at, reason = '' } = req.body;
+
+    if (!new_scheduled_at) {
+        return res.status(400).json({ 
+            success: false,
+            error: 'new_scheduled_at is required' 
+        });
+    }
+
+    try {
+        const result = await appointmentService.rescheduleAppointment(appointmentId, new_scheduled_at, reason);
+        res.json(result);
+    } catch (error) {
+        console.error('Reschedule error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to reschedule appointment' 
+        });
+    }
+});
+
+// Cancel appointment
+app.patch('/api/appointments/:appointmentId/cancel', authenticateToken, auditLog('CANCEL_APPOINTMENT', 'appointments'), async (req, res) => {
+    const { appointmentId } = req.params;
+    const { reason = '', cancelled_by = 'patient' } = req.body;
+
+    try {
+        const result = await appointmentService.cancelAppointment(appointmentId, reason, cancelled_by);
+        res.json(result);
+    } catch (error) {
+        console.error('Cancellation error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to cancel appointment' 
+        });
+    }
+});
+
+// Get all providers (legacy endpoint - use /api/providers/search for advanced search)
+app.get('/api/providers', authenticateToken, async (req, res) => {
+    try {
+        const providers = await appointmentService.searchProviders({});
+        res.json({ 
+            success: true,
+            providers,
+            message: 'Use /api/providers/search for advanced filtering'
+        });
+    } catch (error) {
+        console.error('Provider fetch error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch providers' 
+        });
+    }
+});
+
+// Legacy provider endpoint for backward compatibility
+app.get('/api/providers/legacy', (req, res) => {
     try {
         const providers = db.prepare(`
             SELECT id, first_name, last_name, provider_type, 
@@ -551,6 +763,138 @@ app.get('/api/providers', (req, res) => {
     } catch (error) {
         console.error('Failed to fetch providers:', error);
         res.status(500).json({ error: 'Failed to fetch providers' });
+    }
+});
+
+// ===== PAYMENT ENDPOINTS =====
+
+// Create payment intent for service
+app.post('/api/payments/intent', authenticateToken, auditLog('PAYMENT_INTENT', 'payments'), async (req, res) => {
+    const { service_type, service_id, metadata } = req.body;
+    const user_id = req.user.userId;
+
+    try {
+        const paymentResult = await paymentService.createPaymentIntent({
+            user_id,
+            service_type,
+            service_id,
+            metadata
+        });
+
+        res.status(paymentResult.success ? 201 : 400).json(paymentResult);
+    } catch (error) {
+        console.error('Payment intent creation failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Payment processing failed' 
+        });
+    }
+});
+
+// Confirm payment
+app.post('/api/payments/confirm', authenticateToken, auditLog('PAYMENT_CONFIRM', 'payments'), async (req, res) => {
+    const { payment_intent_id, payment_method_id } = req.body;
+
+    try {
+        const confirmResult = await paymentService.confirmPayment(payment_intent_id, payment_method_id);
+        res.json(confirmResult);
+    } catch (error) {
+        console.error('Payment confirmation failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Payment confirmation failed' 
+        });
+    }
+});
+
+// Create subscription
+app.post('/api/subscriptions', authenticateToken, auditLog('SUBSCRIPTION_CREATE', 'subscriptions'), async (req, res) => {
+    const { plan_type, payment_method_id } = req.body;
+    const user_id = req.user.userId;
+
+    try {
+        const subscriptionResult = await paymentService.createSubscription({
+            user_id,
+            plan_type,
+            payment_method_id
+        });
+
+        res.status(subscriptionResult.success ? 201 : 400).json(subscriptionResult);
+    } catch (error) {
+        console.error('Subscription creation failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Subscription creation failed' 
+        });
+    }
+});
+
+// Cancel subscription
+app.post('/api/subscriptions/:subscriptionId/cancel', authenticateToken, auditLog('SUBSCRIPTION_CANCEL', 'subscriptions'), async (req, res) => {
+    const { subscriptionId } = req.params;
+    const { cancel_immediately = false } = req.body;
+
+    try {
+        const cancelResult = await paymentService.cancelSubscription(subscriptionId, cancel_immediately);
+        res.json(cancelResult);
+    } catch (error) {
+        console.error('Subscription cancellation failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Subscription cancellation failed' 
+        });
+    }
+});
+
+// Process refund
+app.post('/api/payments/:transactionId/refund', authenticateToken, auditLog('PAYMENT_REFUND', 'payments'), async (req, res) => {
+    const { transactionId } = req.params;
+    const { amount, reason } = req.body;
+
+    try {
+        const refundResult = await paymentService.processRefund(transactionId, amount, reason);
+        res.json(refundResult);
+    } catch (error) {
+        console.error('Refund processing failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Refund processing failed' 
+        });
+    }
+});
+
+// Get payment history
+app.get('/api/payments/history', authenticateToken, auditLog('PAYMENT_HISTORY', 'payments'), (req, res) => {
+    const userId = req.user.userId;
+    const limit = parseInt(req.query.limit) || 50;
+
+    try {
+        const paymentHistory = paymentService.getPaymentHistory(userId, limit);
+        res.json({
+            success: true,
+            ...paymentHistory
+        });
+    } catch (error) {
+        console.error('Payment history fetch failed:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch payment history' 
+        });
+    }
+});
+
+// Payment service health check
+app.get('/api/payments/health', authenticateToken, async (req, res) => {
+    try {
+        const healthStatus = await paymentService.healthCheck();
+        res.json(healthStatus);
+    } catch (error) {
+        console.error('Payment health check failed:', error);
+        res.status(500).json({ 
+            service: 'Payment Service',
+            status: 'error',
+            error: error.message 
+        });
     }
 });
 
