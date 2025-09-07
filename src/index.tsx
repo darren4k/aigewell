@@ -431,6 +431,7 @@ app.get('/', (c) => {
         <script src="/static/accessibility.js"></script>
         <script src="/static/ptot-dashboard.js"></script>
         <script src="/static/clinical-dashboard.js"></script>
+        <script src="/static/clinical-assessment-wizard.js"></script>
         <script src="/static/clinical-assessment-ui.js"></script>
         <script src="/static/app.js"></script>
     </body>

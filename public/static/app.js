@@ -65,6 +65,9 @@ function renderApp() {
                     <button onclick="showView('clinical')" class="nav-btn ${currentView === 'clinical' ? 'active' : ''}">
                         <i class="fas fa-stethoscope mr-2"></i>Clinical Assessment
                     </button>
+                    <button onclick="showView('ptot')" class="nav-btn ${currentView === 'ptot' ? 'active' : ''}">
+                        <i class="fas fa-user-md mr-2"></i>PT/OT Portal
+                    </button>
                 </div>
             </div>
         </div>
@@ -138,13 +141,18 @@ function showView(view) {
                 initClinicalDashboard();
             }
             break;
+        case 'ptot':
+            showPTOTDashboard();
+            break;
     }
     
     // Update navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
+        if (btn.onclick && btn.onclick.toString().includes(`showView('${view}')`)) {
+            btn.classList.add('active');
+        }
     });
-    event.target.classList.add('active');
 }
 
 // Dashboard view
