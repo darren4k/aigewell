@@ -12,7 +12,14 @@
     "db:migrate:local": "wrangler d1 migrations apply safeaging-db --local",
     "db:migrate:prod": "wrangler d1 migrations apply safeaging-db",
     "db:seed": "wrangler d1 execute safeaging-db --local --file=./seed.sql",
-    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true"
+    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
+    "superclaude:audit": "node superclaude-integration.js audit --comprehensive",
+    "superclaude:test": "node superclaude-integration.js test --clinical --assessments",
+    "superclaude:validate": "node superclaude-integration.js validate-cpt",
+    "superclaude:security": "node superclaude-integration.js audit --hipaa --phi",
+    "superclaude:accessibility": "node superclaude-integration.js audit --wcag",
+    "superclaude:optimize": "node superclaude-integration.js optimize --assessments --mobile",
+    "qa:full": "npm run superclaude:audit && npm run superclaude:test && npm run superclaude:validate"
   },
   "dependencies": {
     "hono": "^4.9.6"

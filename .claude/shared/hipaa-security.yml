@@ -1,0 +1,255 @@
+# HIPAA Compliance and Healthcare Security Configuration
+# Zero-tolerance security standards for SafeAging clinical platform
+
+hipaa_security_framework:
+  administrative_safeguards:
+    security_officer:
+      requirement: "Designated HIPAA Security Officer"
+      validation: "Security officer contact information documented"
+      implementation: "Security role defined in team structure"
+      
+    workforce_training:
+      requirement: "HIPAA training for all personnel with PHI access"
+      validation: "Training completion records maintained"
+      implementation: "Annual HIPAA training program"
+      
+    access_management:
+      requirement: "Role-based access to PHI"
+      validation: "Access controls documented and tested"
+      implementation: "Principle of least privilege enforced"
+      
+  physical_safeguards:
+    facility_access:
+      requirement: "Secure facility access controls"
+      validation: "Physical security measures documented"
+      implementation: "Cloud infrastructure security (Cloudflare)"
+      
+    workstation_use:
+      requirement: "Secure workstation configuration"
+      validation: "Developer workstation security standards"
+      implementation: "Encrypted development environments"
+      
+  technical_safeguards:
+    access_control:
+      requirement: "Unique user identification and authentication"
+      validation: "Authentication mechanisms tested"
+      implementation: "Multi-factor authentication required"
+      
+    audit_controls:
+      requirement: "Audit logs for all PHI access"
+      validation: "Audit log completeness and integrity"
+      implementation: "Comprehensive audit trail system"
+      
+    integrity:
+      requirement: "PHI integrity protection"
+      validation: "Data integrity verification"
+      implementation: "Encryption at rest and in transit"
+      
+    person_authentication:
+      requirement: "User identity verification"
+      validation: "Authentication system validation"
+      implementation: "Strong authentication protocols"
+      
+    transmission_security:
+      requirement: "Secure PHI transmission"
+      validation: "Encryption in transit verified"
+      implementation: "TLS 1.3 end-to-end encryption"
+
+# Automated Security Scanning Patterns
+security_scan_patterns:
+  phi_detection:
+    patterns:
+      - "\\b\\d{3}-\\d{2}-\\d{4}\\b"  # SSN pattern
+      - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"  # Email
+      - "\\b\\d{2}/\\d{2}/\\d{4}\\b"  # Date of birth pattern
+      - "patient[_\\s]name|patient[_\\s]id|medical[_\\s]record"  # Medical identifiers
+    exclusions:
+      - "test_patient|demo_patient|sample_data"  # Test data patterns
+    severity: "CRITICAL"
+    action: "BLOCK_DEPLOYMENT"
+    
+  hardcoded_secrets:
+    patterns:
+      - "password\\s*=\\s*['\"][^'\"]+['\"]"
+      - "api[_\\s]?key\\s*=\\s*['\"][^'\"]+['\"]" 
+      - "secret\\s*=\\s*['\"][^'\"]+['\"]"
+      - "token\\s*=\\s*['\"][^'\"]+['\"]"
+    severity: "HIGH"
+    action: "REQUIRE_REMEDIATION"
+    
+  logging_violations:
+    patterns:
+      - "console\\.log\\([^)]*patient[^)]*\\)"
+      - "console\\.log\\([^)]*medical[^)]*\\)"
+      - "console\\.log\\([^)]*assessment[^)]*\\)"
+    severity: "HIGH" 
+    action: "REQUIRE_REVIEW"
+    
+  insecure_transmission:
+    patterns:
+      - "http://"  # Non-HTTPS URLs
+      - "fetch\\([^)]*http://[^)]*\\)"
+      - "XMLHttpRequest.*http://"
+    severity: "MEDIUM"
+    action: "REQUIRE_HTTPS"
+
+# Clinical Data Classification
+data_classification:
+  protected_health_information:
+    categories:
+      - "patient_name"
+      - "date_of_birth" 
+      - "assessment_scores"
+      - "clinical_notes"
+      - "provider_observations"
+    handling: "ENCRYPT_AT_REST_AND_TRANSIT"
+    access: "ROLE_BASED_AUTHENTICATED_ONLY"
+    logging: "FULL_AUDIT_TRAIL_REQUIRED"
+    retention: "HIPAA_MINIMUM_REQUIRED"
+    
+  business_data:
+    categories:
+      - "cpt_codes"
+      - "reimbursement_rates"
+      - "assessment_templates"
+    handling: "STANDARD_ENCRYPTION"
+    access: "AUTHENTICATED_USERS"
+    logging: "STANDARD_AUDIT"
+    retention: "BUSINESS_REQUIREMENTS"
+    
+  public_information:
+    categories:
+      - "educational_content"
+      - "safety_tips"
+      - "general_recommendations"
+    handling: "STANDARD_SECURITY"
+    access: "PUBLIC"
+    logging: "MINIMAL"
+    retention: "NO_RESTRICTIONS"
+
+# Automated HIPAA Compliance Checks
+compliance_checks:
+  encryption_validation:
+    description: "Verify all PHI is encrypted at rest and in transit"
+    tests:
+      - "Database connections use TLS encryption"
+      - "API endpoints require HTTPS"
+      - "Local storage is encrypted"
+      - "File uploads are encrypted during transmission"
+    command: "/scan --encryption --phi --comprehensive"
+    
+  access_control_audit:
+    description: "Audit role-based access controls for PHI"
+    tests:
+      - "Authentication required for all PHI access"
+      - "Role-based permissions properly enforced"
+      - "Session management secure and timeout properly"
+      - "Failed authentication attempts logged"
+    command: "/audit --access-control --rbac --phi"
+    
+  audit_trail_validation:
+    description: "Validate comprehensive audit logging"
+    tests:
+      - "All PHI access events logged"
+      - "Audit logs include user ID, timestamp, action, resource"
+      - "Audit logs are tamper-evident"
+      - "Log retention meets HIPAA requirements"
+    command: "/validate --audit-logs --phi --integrity"
+    
+  data_minimization_check:
+    description: "Ensure minimum necessary PHI usage"
+    tests:
+      - "Only required PHI fields collected"
+      - "PHI not used in non-essential features"
+      - "Data retention policies properly implemented"
+      - "PHI deletion mechanisms functional"
+    command: "/analyze --data-minimization --phi --retention"
+
+# Incident Response Procedures
+incident_response:
+  breach_detection:
+    automated_monitoring:
+      - "Unusual PHI access patterns"
+      - "Failed authentication attempts"
+      - "Data export anomalies"
+      - "System vulnerability exploitation"
+    alert_thresholds:
+      - "Failed login attempts: 5 per user per hour"
+      - "PHI access outside business hours"
+      - "Bulk data export requests"
+      - "Security scan detections"
+      
+  breach_response:
+    immediate_actions:
+      - "Isolate affected systems"
+      - "Preserve forensic evidence"
+      - "Assess scope of breach"
+      - "Notify security officer"
+    notification_timeline:
+      - "Internal notification: Immediate"
+      - "Patient notification: 60 days maximum"
+      - "HHS notification: 60 days maximum"
+      - "Media notification: If >500 individuals affected"
+      
+  recovery_procedures:
+    containment:
+      - "Stop ongoing breach"
+      - "Secure compromised systems" 
+      - "Prevent further unauthorized access"
+    eradication:
+      - "Remove malicious code/access"
+      - "Patch vulnerabilities"
+      - "Update security controls"
+    recovery:
+      - "Restore systems from clean backups"
+      - "Validate system integrity"
+      - "Monitor for continued threats"
+
+# Business Associate Agreement Requirements
+baa_requirements:
+  third_party_services:
+    cloudflare:
+      status: "BAA_REQUIRED"
+      services: ["CDN", "Workers", "D1_Database", "R2_Storage"]
+      compliance: "HIPAA_Business_Associate"
+      data_types: ["PHI", "Assessment_Data", "Clinical_Scores"]
+      
+    openai:
+      status: "EVALUATE_BAA"
+      services: ["Vision_API", "Text_Analysis"]
+      compliance: "REVIEW_REQUIRED"
+      data_types: ["NO_PHI_TRANSMISSION"]
+      recommendation: "Use only for non-PHI analysis"
+      
+    github:
+      status: "NO_PHI"
+      services: ["Code_Repository"]
+      compliance: "Standard"
+      data_types: ["Source_Code_Only"]
+      requirement: "Ensure no PHI in code commits"
+
+# Healthcare-Specific Security Commands
+security_commands:
+  hipaa_full_audit:
+    command: "/audit --hipaa --comprehensive --phi --administrative --physical --technical"
+    description: "Complete HIPAA compliance audit across all safeguards"
+    persona: "healthcare_security"
+    frequency: "monthly"
+    
+  phi_scan:
+    command: "/scan --phi --patterns --critical --block-deployment"
+    description: "Scan for Protected Health Information exposure"
+    persona: "healthcare_security" 
+    frequency: "every_commit"
+    
+  clinical_security_test:
+    command: "/test --security --clinical --assessments --authentication --authorization"
+    description: "Security testing focused on clinical assessment workflows"
+    persona: "healthcare_security"
+    frequency: "weekly"
+    
+  breach_simulation:
+    command: "/simulate --breach --response --phi --incident"
+    description: "Simulate security breach and test incident response"
+    persona: "healthcare_security"
+    frequency: "quarterly"

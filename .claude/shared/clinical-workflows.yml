@@ -1,0 +1,187 @@
+# SafeAging Clinical Workflow Optimization System
+# Evidence-based workflows for healthcare platform development
+
+clinical_assessment_workflows:
+  home_fast_validation:
+    description: "Validate Home FAST 25-item assessment implementation"
+    steps:
+      - "Verify all 25 items match published Home FAST checklist"
+      - "Validate scoring algorithm (0-25 scale)"
+      - "Test risk categorization thresholds (0-3 low, 4-7 moderate, 8+ high)"
+      - "Confirm evidence citations (Mackenzie et al. 2000)"
+    acceptance_criteria:
+      - "All items match official Home FAST publication"
+      - "Scoring produces consistent results with clinical standards"
+      - "Risk categories align with published research"
+    
+  berg_balance_validation:
+    description: "Validate Berg Balance Scale implementation"
+    steps:
+      - "Verify all 14 items with 0-4 scoring scale"
+      - "Test total score calculation (0-56 range)"
+      - "Validate risk thresholds (≤20 high, 21-40 moderate, 41+ low risk)"
+      - "Confirm evidence base (Berg et al. 1992)"
+    acceptance_criteria:
+      - "Matches official Berg Balance Scale scoring"
+      - "Risk categorization follows clinical guidelines"
+      - "Calculations are mathematically accurate"
+      
+  tug_test_validation:
+    description: "Validate Timed Up and Go test implementation"
+    steps:
+      - "Test timer accuracy to 0.1 second precision"
+      - "Validate risk thresholds (<10s normal, 10-13.5s mild, ≥13.5s high)"
+      - "Confirm evidence citations (Podsiadlo & Richardson 1991)"
+    acceptance_criteria:
+      - "Timer precision meets clinical standards"
+      - "Risk thresholds match published research"
+      - "Results consistent with clinical practice"
+
+medicare_compliance_workflows:
+  cpt_code_validation:
+    description: "Validate CPT code mapping and billing accuracy"
+    steps:
+      - "Verify CPT codes match current CMS fee schedule"
+      - "Test reimbursement calculations against Medicare rates"
+      - "Validate code combinations are compliant"
+      - "Check time estimates align with CMS guidelines"
+    cpt_codes:
+      "97161": "PT evaluation low complexity - $125"
+      "97162": "PT evaluation moderate complexity - $150" 
+      "97163": "PT evaluation high complexity - $175"
+      "97542": "Home management evaluation - $90"
+      "97750": "Performance tests - $45"
+    acceptance_criteria:
+      - "All CPT codes current in CMS database"
+      - "Reimbursement rates accurate within 5%"
+      - "Code combinations follow Medicare guidelines"
+
+accessibility_workflows:
+  wcag_compliance_validation:
+    description: "Validate WCAG 2.1 AA compliance for clinical assessments"
+    steps:
+      - "Test keyboard navigation through all assessment steps"
+      - "Validate screen reader compatibility with ARIA labels"
+      - "Check color contrast ratios (4.5:1 minimum)"
+      - "Test with assistive technologies (JAWS, NVDA, VoiceOver)"
+      - "Validate voice guidance functionality"
+    acceptance_criteria:
+      - "100% keyboard navigable"
+      - "All content accessible to screen readers"
+      - "Color contrast meets WCAG standards"
+      - "Voice guidance covers all clinical steps"
+      
+  senior_ux_validation:
+    description: "Validate user experience for senior healthcare consumers"
+    steps:
+      - "Test with large font sizes (18px minimum)"
+      - "Validate touch targets (44px minimum)"
+      - "Check cognitive load in multi-step assessments"
+      - "Test error messaging clarity"
+    acceptance_criteria:
+      - "Readable at 200% zoom"
+      - "Touch-friendly for tablet use"
+      - "Clear progress indicators"
+      - "Simple, medical-professional language"
+
+hipaa_compliance_workflows:
+  phi_protection_audit:
+    description: "Audit Protected Health Information handling"
+    steps:
+      - "Scan for hardcoded patient data"
+      - "Validate encryption at rest and in transit"
+      - "Test audit logging for all PHI access"
+      - "Verify user authentication and authorization"
+      - "Check data retention and deletion policies"
+    acceptance_criteria:
+      - "No PHI in logs or code"
+      - "End-to-end encryption verified"
+      - "Complete audit trail for all PHI access"
+      - "Role-based access controls functional"
+      
+  business_associate_compliance:
+    description: "Validate Business Associate Agreement compliance"
+    steps:
+      - "Review third-party integrations for BAA requirements"
+      - "Audit data sharing with external services"
+      - "Validate incident response procedures"
+      - "Check breach notification mechanisms"
+    acceptance_criteria:
+      - "All third parties have signed BAAs"
+      - "Data sharing follows minimum necessary standard"
+      - "Incident response plan tested and documented"
+
+performance_optimization_workflows:
+  assessment_performance:
+    description: "Optimize clinical assessment performance"
+    steps:
+      - "Profile assessment loading times"
+      - "Optimize database queries for scoring calculations"
+      - "Test mobile performance on typical devices"
+      - "Validate real-time scoring responsiveness"
+    benchmarks:
+      - "Assessment loads in <2 seconds"
+      - "Scoring calculations complete in <500ms"
+      - "Mobile performance scores 90+ on Lighthouse"
+      - "Real-time risk updates in <100ms"
+      
+  export_optimization:
+    description: "Optimize PDF/CSV export performance"
+    steps:
+      - "Profile report generation times"
+      - "Optimize PDF rendering for complex assessments"
+      - "Test large dataset export performance"
+      - "Validate EMR integration speed"
+    benchmarks:
+      - "PDF generation <5 seconds"
+      - "CSV export <2 seconds"
+      - "EMR integration <10 seconds"
+
+# Command Automation for Clinical Workflows
+automated_commands:
+  daily_compliance_check:
+    command: "/audit --hipaa --wcag --cpt --automated"
+    schedule: "daily"
+    persona: "healthcare_security"
+    
+  weekly_clinical_validation:
+    command: "/test --clinical --assessments --evidence-based"
+    schedule: "weekly"
+    persona: "clinical_qa"
+    
+  performance_monitoring:
+    command: "/profile --assessments --real-time --mobile"
+    schedule: "continuous"
+    persona: "performance_optimizer"
+    
+  accessibility_audit:
+    command: "/validate --wcag --senior-ux --assistive-tech"
+    schedule: "bi-weekly"
+    persona: "accessibility_expert"
+
+# Quality Gates for Clinical Features
+quality_gates:
+  clinical_assessment_release:
+    requirements:
+      - "All clinical validations pass"
+      - "HIPAA compliance audit clean"
+      - "WCAG 2.1 AA compliance verified"
+      - "CPT code accuracy confirmed"
+      - "Performance benchmarks met"
+    blocking_issues:
+      - "PHI exposure risk"
+      - "Clinical scoring inaccuracy"
+      - "Accessibility failures"
+      - "Performance below benchmarks"
+      
+  production_deployment:
+    requirements:
+      - "All quality gates passed"
+      - "Security scan clean"
+      - "Evidence-based validation complete"
+      - "Provider workflow testing passed"
+    rollback_triggers:
+      - "HIPAA violation detected"
+      - "Clinical scoring errors"
+      - "Accessibility regression"
+      - "Performance degradation >20%"
