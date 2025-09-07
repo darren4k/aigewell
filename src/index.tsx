@@ -1,12 +1,14 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-pages'
-import clinicalApi from './clinical-assessment'
+import ptotApi from './ptot-evaluation'
+import standardizedApi from './standardized-assessments'
+import clinicalApi from './clinical-assessment-prototype'
 
 type Bindings = {
-  DB?: D1Database
-  KV?: KVNamespace
-  R2?: R2Bucket
+  DB: D1Database
+  KV: KVNamespace
+  R2: R2Bucket
   OPENAI_API_KEY?: string
 }
 
@@ -17,6 +19,12 @@ app.use('/api/*', cors())
 
 // Serve static files
 app.use('/static/*', serveStatic())
+
+// Mount PT/OT evaluation API
+app.route('/api/ptot', ptotApi)
+
+// Mount standardized assessments API
+app.route('/api/assessments/standardized', standardizedApi)
 
 // Mount clinical assessment API
 app.route('/api/clinical', clinicalApi)
@@ -421,7 +429,8 @@ app.get('/', (c) => {
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/accessibility.js"></script>
-        <script src="/static/clinical-dashboard.js"></script>
+        <script src="/static/ptot-dashboard.js"></script>
+        <script src="/static/clinical-assessment-ui.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>

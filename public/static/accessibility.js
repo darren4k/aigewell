@@ -3,299 +3,396 @@
 
 class AccessibilityManager {
     constructor() {
-        this.fontSize = 'medium';
-        this.highContrast = false;
-        this.voiceEnabled = false;
-        this.init();
+        this.fontSize = localStorage.getItem('fontSize') || 'normal';
+        this.highContrast = localStorage.getItem('highContrast') === 'true';
+        this.voiceEnabled = localStorage.getItem('voiceEnabled') === 'true';
+        this.keyboardNav = true;
+        this.synth = window.speechSynthesis;
+        this.initializeAccessibility();
     }
 
-    init() {
-        this.addAccessibilityControls();
+    initializeAccessibility() {
+        // Apply saved preferences
+        this.applyFontSize();
+        this.applyHighContrast();
+        
+        // Set up keyboard navigation
         this.setupKeyboardNavigation();
-        this.setupScreenReaderSupport();
-        this.setupVoiceGuidance();
+        
+        // Add skip links
         this.addSkipLinks();
+        
+        // Initialize voice guidance if enabled
+        if (this.voiceEnabled) {
+            this.initVoiceGuidance();
+        }
+        
+        // Add accessibility toolbar
+        this.createAccessibilityToolbar();
+        
+        // Set up ARIA live regions
+        this.setupAriaRegions();
     }
 
-    addAccessibilityControls() {
-        // Create accessibility toolbar
+    createAccessibilityToolbar() {
         const toolbar = document.createElement('div');
-        toolbar.id = 'accessibility-toolbar';
-        toolbar.className = 'fixed top-0 right-0 z-50 bg-white border-l border-b border-gray-300 p-2 flex flex-col space-y-2';
+        toolbar.id = 'accessibilityToolbar';
+        toolbar.className = 'fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 z-50';
+        toolbar.setAttribute('role', 'toolbar');
+        toolbar.setAttribute('aria-label', 'Accessibility controls');
+        
         toolbar.innerHTML = `
-            <button id="toggle-font-size" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" title="Increase font size">
-                <i class="fas fa-font"></i> Aa
+            <button 
+                onclick="accessibility.toggleToolbar()" 
+                class="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center mb-2"
+                aria-label="Toggle accessibility menu"
+                id="a11yToggle">
+                <i class="fas fa-universal-access text-xl"></i>
             </button>
-            <button id="toggle-contrast" class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700" title="High contrast mode">
-                <i class="fas fa-adjust"></i>
-            </button>
-            <button id="toggle-voice" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" title="Voice guidance">
-                <i class="fas fa-volume-up"></i>
-            </button>
-            <button id="screen-reader-help" class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700" title="Screen reader help">
-                <i class="fas fa-question"></i>
-            </button>
+            
+            <div id="a11yControls" class="hidden space-y-2">
+                <!-- Font Size Controls -->
+                <div class="flex items-center space-x-2">
+                    <button 
+                        onclick="accessibility.decreaseFontSize()" 
+                        class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                        aria-label="Decrease font size">
+                        A-
+                    </button>
+                    <span class="text-sm" aria-live="polite">Font</span>
+                    <button 
+                        onclick="accessibility.increaseFontSize()" 
+                        class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                        aria-label="Increase font size">
+                        A+
+                    </button>
+                </div>
+                
+                <!-- High Contrast -->
+                <button 
+                    onclick="accessibility.toggleHighContrast()" 
+                    class="w-full px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                    aria-pressed="${this.highContrast}">
+                    <i class="fas fa-adjust mr-1"></i> High Contrast
+                </button>
+                
+                <!-- Voice Guidance -->
+                <button 
+                    onclick="accessibility.toggleVoice()" 
+                    class="w-full px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                    aria-pressed="${this.voiceEnabled}">
+                    <i class="fas fa-volume-up mr-1"></i> Voice Guide
+                </button>
+                
+                <!-- Keyboard Help -->
+                <button 
+                    onclick="accessibility.showKeyboardHelp()" 
+                    class="w-full px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">
+                    <i class="fas fa-keyboard mr-1"></i> Keyboard Help
+                </button>
+            </div>
         `;
         
         document.body.appendChild(toolbar);
-
-        // Event listeners
-        document.getElementById('toggle-font-size').addEventListener('click', () => this.toggleFontSize());
-        document.getElementById('toggle-contrast').addEventListener('click', () => this.toggleHighContrast());
-        document.getElementById('toggle-voice').addEventListener('click', () => this.toggleVoiceGuidance());
-        document.getElementById('screen-reader-help').addEventListener('click', () => this.showScreenReaderHelp());
     }
 
-    toggleFontSize() {
-        const sizes = ['small', 'medium', 'large', 'x-large'];
+    toggleToolbar() {
+        const controls = document.getElementById('a11yControls');
+        controls.classList.toggle('hidden');
+        this.announce(controls.classList.contains('hidden') ? 
+            'Accessibility menu closed' : 'Accessibility menu opened');
+    }
+
+    // Font Size Management
+    increaseFontSize() {
+        const sizes = ['small', 'normal', 'large', 'x-large'];
         const currentIndex = sizes.indexOf(this.fontSize);
-        this.fontSize = sizes[(currentIndex + 1) % sizes.length];
-        
-        document.documentElement.style.fontSize = {
-            'small': '14px',
-            'medium': '16px',
-            'large': '18px',
-            'x-large': '22px'
-        }[this.fontSize];
-
-        this.announceToScreenReader(`Font size changed to ${this.fontSize}`);
+        if (currentIndex < sizes.length - 1) {
+            this.fontSize = sizes[currentIndex + 1];
+            this.applyFontSize();
+            this.announce(`Font size increased to ${this.fontSize}`);
+        }
     }
 
+    decreaseFontSize() {
+        const sizes = ['small', 'normal', 'large', 'x-large'];
+        const currentIndex = sizes.indexOf(this.fontSize);
+        if (currentIndex > 0) {
+            this.fontSize = sizes[currentIndex - 1];
+            this.applyFontSize();
+            this.announce(`Font size decreased to ${this.fontSize}`);
+        }
+    }
+
+    applyFontSize() {
+        const root = document.documentElement;
+        const sizes = {
+            'small': '14px',
+            'normal': '16px',
+            'large': '20px',
+            'x-large': '24px'
+        };
+        root.style.fontSize = sizes[this.fontSize];
+        localStorage.setItem('fontSize', this.fontSize);
+    }
+
+    // High Contrast Mode
     toggleHighContrast() {
         this.highContrast = !this.highContrast;
-        
+        this.applyHighContrast();
+        this.announce(this.highContrast ? 
+            'High contrast mode enabled' : 'High contrast mode disabled');
+    }
+
+    applyHighContrast() {
         if (this.highContrast) {
             document.body.classList.add('high-contrast');
             this.addHighContrastStyles();
         } else {
             document.body.classList.remove('high-contrast');
-            this.removeHighContrastStyles();
         }
-
-        this.announceToScreenReader(`High contrast mode ${this.highContrast ? 'enabled' : 'disabled'}`);
+        localStorage.setItem('highContrast', this.highContrast);
     }
 
     addHighContrastStyles() {
-        const style = document.createElement('style');
-        style.id = 'high-contrast-styles';
-        style.textContent = `
-            .high-contrast {
-                background: #000000 !important;
-                color: #ffffff !important;
-            }
-            .high-contrast * {
-                background-color: #000000 !important;
-                color: #ffffff !important;
-                border-color: #ffffff !important;
-            }
-            .high-contrast .bg-blue-600,
-            .high-contrast .bg-blue-500,
-            .high-contrast .bg-green-600,
-            .high-contrast .bg-green-500 {
-                background-color: #ffffff !important;
-                color: #000000 !important;
-            }
-            .high-contrast .text-gray-600,
-            .high-contrast .text-gray-500 {
-                color: #cccccc !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    removeHighContrastStyles() {
-        const style = document.getElementById('high-contrast-styles');
-        if (style) style.remove();
-    }
-
-    toggleVoiceGuidance() {
-        this.voiceEnabled = !this.voiceEnabled;
-        
-        if (this.voiceEnabled) {
-            this.speak('Voice guidance enabled. I will help you navigate the SafeAging application.');
-            this.setupVoiceNavigation();
-        } else {
-            this.speak('Voice guidance disabled.');
+        if (!document.getElementById('highContrastStyles')) {
+            const style = document.createElement('style');
+            style.id = 'highContrastStyles';
+            style.textContent = `
+                .high-contrast {
+                    filter: contrast(1.2);
+                }
+                .high-contrast * {
+                    border-color: #000 !important;
+                }
+                .high-contrast button {
+                    border: 2px solid #000 !important;
+                }
+                .high-contrast a {
+                    text-decoration: underline !important;
+                    font-weight: bold !important;
+                }
+                .high-contrast .text-gray-600,
+                .high-contrast .text-gray-500 {
+                    color: #000 !important;
+                }
+            `;
+            document.head.appendChild(style);
         }
     }
 
-    speak(text) {
-        if (!this.voiceEnabled || !window.speechSynthesis) return;
+    // Voice Guidance
+    toggleVoice() {
+        this.voiceEnabled = !this.voiceEnabled;
+        localStorage.setItem('voiceEnabled', this.voiceEnabled);
         
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.8;
-        utterance.pitch = 1;
-        utterance.volume = 0.8;
-        window.speechSynthesis.speak(utterance);
+        if (this.voiceEnabled) {
+            this.initVoiceGuidance();
+            this.speak('Voice guidance enabled. I will help you navigate the application.');
+        } else {
+            this.speak('Voice guidance disabled');
+            setTimeout(() => this.synth.cancel(), 2000);
+        }
     }
 
-    setupVoiceNavigation() {
-        // Add voice announcements for key interactions
-        document.addEventListener('click', (e) => {
-            if (!this.voiceEnabled) return;
-            
-            const target = e.target.closest('button, a, [role="button"]');
-            if (target) {
-                const text = target.textContent.trim() || target.getAttribute('title') || target.getAttribute('aria-label');
-                if (text) this.speak(text);
-            }
-        });
-
+    initVoiceGuidance() {
+        // Add voice announcements to interactive elements
         document.addEventListener('focus', (e) => {
             if (!this.voiceEnabled) return;
             
-            const element = e.target;
-            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                const label = element.getAttribute('placeholder') || element.previousElementSibling?.textContent || 'Input field';
+            const target = e.target;
+            if (target.tagName === 'BUTTON' || target.tagName === 'A') {
+                const label = target.getAttribute('aria-label') || 
+                             target.textContent || 
+                             'Interactive element';
+                this.speak(label);
+            } else if (target.tagName === 'INPUT') {
+                const label = target.getAttribute('aria-label') || 
+                             target.getAttribute('placeholder') || 
+                             'Input field';
                 this.speak(label);
             }
-        });
+        }, true);
     }
 
+    speak(text) {
+        if (!this.voiceEnabled || !this.synth) return;
+        
+        this.synth.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        this.synth.speak(utterance);
+    }
+
+    announce(text) {
+        // Update ARIA live region
+        const liveRegion = document.getElementById('ariaLive');
+        if (liveRegion) {
+            liveRegion.textContent = text;
+        }
+        
+        // Also speak if voice is enabled
+        if (this.voiceEnabled) {
+            this.speak(text);
+        }
+    }
+
+    // Keyboard Navigation
     setupKeyboardNavigation() {
-        // Add keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Alt + A = Accessibility menu
+            // Alt + A: Toggle accessibility menu
             if (e.altKey && e.key === 'a') {
                 e.preventDefault();
-                document.getElementById('accessibility-toolbar').focus();
+                this.toggleToolbar();
             }
             
-            // Alt + 1-5 = Navigate to main sections
-            if (e.altKey && e.key >= '1' && e.key <= '5') {
-                e.preventDefault();
-                this.navigateToSection(parseInt(e.key) - 1);
+            // Alt + 1-5: Quick navigation
+            if (e.altKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        this.navigateTo('dashboard');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        this.navigateTo('assess');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        this.navigateTo('plans');
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        this.navigateTo('equipment');
+                        break;
+                    case '5':
+                        e.preventDefault();
+                        this.navigateTo('ptot');
+                        break;
+                }
             }
-
-            // Alt + H = Home/Dashboard
-            if (e.altKey && e.key === 'h') {
-                e.preventDefault();
-                if (typeof showView === 'function') showView('dashboard');
-            }
-
-            // Escape = Close modals
-            if (e.key === 'Escape') {
-                const modals = document.querySelectorAll('.fixed[class*="z-50"]:not(.hidden)');
-                modals.forEach(modal => {
-                    const closeBtn = modal.querySelector('button[onclick*="close"], button[onclick*="Close"]');
-                    if (closeBtn) closeBtn.click();
-                });
-            }
-        });
-
-        // Ensure all interactive elements are focusable
-        this.makeFocusable();
-    }
-
-    makeFocusable() {
-        const interactiveElements = document.querySelectorAll('div[onclick], span[onclick]');
-        interactiveElements.forEach(el => {
-            if (!el.getAttribute('tabindex')) {
-                el.setAttribute('tabindex', '0');
-                el.setAttribute('role', 'button');
-            }
-        });
-    }
-
-    navigateToSection(index) {
-        const navButtons = document.querySelectorAll('.nav-btn');
-        if (navButtons[index]) {
-            navButtons[index].click();
-            navButtons[index].focus();
             
-            if (this.voiceEnabled) {
-                this.speak(`Navigated to ${navButtons[index].textContent}`);
+            // Tab navigation enhancement
+            if (e.key === 'Tab') {
+                const focusable = document.querySelectorAll(
+                    'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (focusable.length > 0) {
+                    // Add visual focus indicator
+                    focusable.forEach(el => {
+                        el.classList.add('focus-visible');
+                    });
+                }
             }
+        });
+    }
+
+    navigateTo(view) {
+        if (typeof showView === 'function') {
+            showView(view);
+            this.announce(`Navigated to ${view}`);
         }
     }
 
-    setupScreenReaderSupport() {
-        // Add ARIA labels and live regions
-        this.addAriaLabels();
-        this.setupLiveRegions();
-    }
-
-    addAriaLabels() {
-        // Add labels to common elements
-        const nav = document.querySelector('.bg-white.shadow-sm.border-b');
-        if (nav) nav.setAttribute('aria-label', 'Main navigation');
-
-        const buttons = document.querySelectorAll('button:not([aria-label]):not([title])');
-        buttons.forEach(btn => {
-            const text = btn.textContent.trim();
-            if (text) btn.setAttribute('aria-label', text);
-        });
-
-        // Add landmarks
-        const main = document.getElementById('mainContent');
-        if (main) main.setAttribute('role', 'main');
-
-        const header = document.querySelector('.gradient-bg');
-        if (header) header.setAttribute('role', 'banner');
-    }
-
-    setupLiveRegions() {
-        // Create live region for announcements
-        const liveRegion = document.createElement('div');
-        liveRegion.id = 'aria-live-region';
-        liveRegion.setAttribute('aria-live', 'polite');
-        liveRegion.setAttribute('aria-atomic', 'true');
-        liveRegion.style.cssText = 'position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;';
-        document.body.appendChild(liveRegion);
-    }
-
-    announceToScreenReader(message) {
-        const liveRegion = document.getElementById('aria-live-region');
-        if (liveRegion) {
-            liveRegion.textContent = message;
-            // Clear after announcement
-            setTimeout(() => liveRegion.textContent = '', 1000);
-        }
-    }
-
+    // Skip Links
     addSkipLinks() {
-        const skipLinks = document.createElement('div');
-        skipLinks.innerHTML = `
-            <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 bg-blue-600 text-white p-2 z-50">
+        const skipNav = document.createElement('div');
+        skipNav.className = 'sr-only focus-within:not-sr-only';
+        skipNav.innerHTML = `
+            <a href="#mainContent" 
+               class="absolute top-0 left-0 bg-blue-600 text-white p-2 z-50 focus:not-sr-only">
                 Skip to main content
             </a>
-            <a href="#navigation" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-24 bg-blue-600 text-white p-2 z-50">
-                Skip to navigation
-            </a>
         `;
-        document.body.insertBefore(skipLinks, document.body.firstChild);
+        document.body.insertBefore(skipNav, document.body.firstChild);
     }
 
-    showScreenReaderHelp() {
-        const helpText = `
-            SafeAging Accessibility Help:
-            
-            Keyboard Shortcuts:
-            - Alt + A: Access accessibility menu
-            - Alt + 1-5: Navigate to main sections
-            - Alt + H: Go to home/dashboard
-            - Escape: Close modals
-            - Tab: Navigate between elements
-            - Enter/Space: Activate buttons and links
-            
-            Screen Reader Features:
-            - All images have alternative text
-            - Form fields are properly labeled
-            - Navigation landmarks are defined
-            - Live regions announce updates
-            
-            Voice Guidance:
-            - Click the voice button to enable spoken navigation
-            - Buttons and links will be read aloud when clicked
-            - Form fields will be announced when focused
+    // ARIA Live Regions
+    setupAriaRegions() {
+        // Create main live region for announcements
+        const liveRegion = document.createElement('div');
+        liveRegion.id = 'ariaLive';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.className = 'sr-only';
+        document.body.appendChild(liveRegion);
+        
+        // Create alert region for urgent messages
+        const alertRegion = document.createElement('div');
+        alertRegion.id = 'ariaAlert';
+        alertRegion.setAttribute('role', 'alert');
+        alertRegion.setAttribute('aria-live', 'assertive');
+        alertRegion.className = 'sr-only';
+        document.body.appendChild(alertRegion);
+    }
+
+    // Keyboard Help Dialog
+    showKeyboardHelp() {
+        const helpDialog = document.createElement('div');
+        helpDialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        helpDialog.setAttribute('role', 'dialog');
+        helpDialog.setAttribute('aria-labelledby', 'keyboardHelpTitle');
+        
+        helpDialog.innerHTML = `
+            <div class="bg-white rounded-lg p-6 max-w-md">
+                <h2 id="keyboardHelpTitle" class="text-xl font-bold mb-4">Keyboard Shortcuts</h2>
+                <dl class="space-y-2 text-sm">
+                    <dt class="font-semibold">Alt + A</dt>
+                    <dd class="ml-4 text-gray-600">Toggle accessibility menu</dd>
+                    
+                    <dt class="font-semibold">Alt + 1-5</dt>
+                    <dd class="ml-4 text-gray-600">Navigate to main sections</dd>
+                    
+                    <dt class="font-semibold">Tab</dt>
+                    <dd class="ml-4 text-gray-600">Move focus forward</dd>
+                    
+                    <dt class="font-semibold">Shift + Tab</dt>
+                    <dd class="ml-4 text-gray-600">Move focus backward</dd>
+                    
+                    <dt class="font-semibold">Enter/Space</dt>
+                    <dd class="ml-4 text-gray-600">Activate buttons and links</dd>
+                    
+                    <dt class="font-semibold">Escape</dt>
+                    <dd class="ml-4 text-gray-600">Close dialogs and menus</dd>
+                </dl>
+                <button 
+                    onclick="this.closest('.fixed').remove()" 
+                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Close
+                </button>
+            </div>
         `;
         
-        alert(helpText);
-        this.announceToScreenReader('Screen reader help displayed');
+        document.body.appendChild(helpDialog);
+        helpDialog.querySelector('button').focus();
+        
+        // Close on Escape
+        helpDialog.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                helpDialog.remove();
+            }
+        });
+    }
+
+    // Form Validation Announcements
+    announceFormError(fieldName, errorMessage) {
+        const alertRegion = document.getElementById('ariaAlert');
+        if (alertRegion) {
+            alertRegion.textContent = `Error in ${fieldName}: ${errorMessage}`;
+        }
+        this.speak(`Error in ${fieldName}: ${errorMessage}`);
+    }
+
+    announceFormSuccess(message) {
+        this.announce(message);
     }
 }
 
-// Add CSS for screen reader only content
+// Initialize accessibility on page load
+const accessibility = new AccessibilityManager();
+
+// Add screen reader only styles
 const srStyles = document.createElement('style');
 srStyles.textContent = `
     .sr-only {
@@ -305,27 +402,25 @@ srStyles.textContent = `
         padding: 0;
         margin: -1px;
         overflow: hidden;
-        clip: rect(0, 0, 0, 0);
+        clip: rect(0,0,0,0);
         white-space: nowrap;
         border: 0;
     }
-    .focus\\:not-sr-only:focus {
+    
+    .focus-visible:focus {
+        outline: 3px solid #4f46e5;
+        outline-offset: 2px;
+    }
+    
+    .not-sr-only:focus {
         position: static;
         width: auto;
         height: auto;
-        padding: 0.5rem;
-        margin: 0;
+        padding: inherit;
+        margin: inherit;
         overflow: visible;
         clip: auto;
         white-space: normal;
     }
 `;
 document.head.appendChild(srStyles);
-
-// Initialize accessibility features when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    new AccessibilityManager();
-});
-
-// Export for global access
-window.AccessibilityManager = AccessibilityManager;
