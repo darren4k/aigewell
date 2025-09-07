@@ -430,6 +430,7 @@ app.get('/', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/accessibility.js"></script>
         <script src="/static/ptot-dashboard.js"></script>
+        <script src="/static/clinical-dashboard.js"></script>
         <script src="/static/clinical-assessment-ui.js"></script>
         <script src="/static/app.js"></script>
     </body>
