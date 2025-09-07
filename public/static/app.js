@@ -14,29 +14,332 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUserData();
 });
 
+// Utility functions for role-based navigation
+function getRoleDisplayName(role) {
+    const roleNames = {
+        'patient': 'Patient',
+        'caregiver': 'Caregiver',
+        'provider': 'Provider'
+    };
+    return roleNames[role] || role;
+}
+
+function showUnauthorized() {
+    document.getElementById('mainContent').innerHTML = `
+        <div class="text-center py-16">
+            <i class="fas fa-lock text-6xl text-gray-300 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
+            <p class="text-gray-600">You don't have permission to view this page.</p>
+            <button onclick="showView('dashboard')" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                Return to Dashboard
+            </button>
+        </div>
+    `;
+}
+
+function showAppointments() {
+    const userRole = RoleBasedNavigation.getCurrentUserRole();
+    const content = document.getElementById('mainContent');
+    
+    if (userRole === RoleBasedNavigation.USER_ROLES.PROVIDER) {
+        content.innerHTML = renderProviderAppointments();
+    } else {
+        content.innerHTML = renderPatientAppointments();
+    }
+}
+
+function renderPatientAppointments() {
+    return `
+        <div class="patient-appointments">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">My Appointments</h1>
+                <button onclick="scheduleAppointment()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    <i class="fas fa-plus mr-2"></i>Schedule Appointment
+                </button>
+            </div>
+
+            <!-- Upcoming Appointments -->
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">Upcoming Appointments</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="appointment-card p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-user-md text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">PT Session with Sarah Johnson</h3>
+                                        <p class="text-gray-600 text-sm">Physical Therapy Assessment</p>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            <i class="fas fa-calendar mr-1"></i>Tomorrow, 2:00 PM - 3:00 PM
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800 text-sm">Reschedule</button>
+                                    <button class="text-red-600 hover:text-red-800 text-sm">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="appointment-card p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-home text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">Home Safety Follow-up</h3>
+                                        <p class="text-gray-600 text-sm">Review safety improvements</p>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            <i class="fas fa-calendar mr-1"></i>Friday, 10:00 AM - 11:00 AM
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800 text-sm">Reschedule</button>
+                                    <button class="text-red-600 hover:text-red-800 text-sm">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Past Appointments -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">Past Appointments</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="appointment-card p-4 border border-gray-100 rounded-lg bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-check text-gray-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">Initial Assessment</h3>
+                                        <p class="text-gray-600 text-sm">Home safety evaluation</p>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            <i class="fas fa-calendar mr-1"></i>Last week, completed
+                                        </p>
+                                    </div>
+                                </div>
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">View Report</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderProviderAppointments() {
+    return `
+        <div class="provider-appointments">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Patient Schedule</h1>
+                <div class="flex space-x-3">
+                    <button onclick="manageSchedule()" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                        <i class="fas fa-cog mr-2"></i>Manage Schedule
+                    </button>
+                    <button onclick="addAppointment()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-plus mr-2"></i>Add Appointment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">Today's Schedule</h2>
+                    <p class="text-gray-600">6 appointments scheduled</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        ${renderProviderTodaySchedule()}
+                    </div>
+                </div>
+            </div>
+
+            <!-- This Week -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">This Week</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${renderWeeklySchedule()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderProviderTodaySchedule() {
+    const appointments = [
+        { time: '9:00 AM', patient: 'Mary Johnson', type: 'Initial Assessment', status: 'confirmed' },
+        { time: '10:30 AM', patient: 'Robert Smith', type: 'Follow-up', status: 'in-progress' },
+        { time: '12:00 PM', patient: 'Lunch Break', type: '', status: 'break' },
+        { time: '2:00 PM', patient: 'Alice Brown', type: 'PT Session', status: 'confirmed' },
+        { time: '3:30 PM', patient: 'David Wilson', type: 'Home Safety Review', status: 'confirmed' }
+    ];
+
+    return appointments.map(apt => {
+        const statusColors = {
+            'confirmed': 'bg-blue-100 text-blue-800',
+            'in-progress': 'bg-green-100 text-green-800',
+            'break': 'bg-gray-100 text-gray-600'
+        };
+
+        return `
+            <div class="appointment-item p-4 border border-gray-200 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="text-sm font-semibold text-gray-800 w-20">${apt.time}</div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-gray-800">${apt.patient}</h3>
+                            ${apt.type ? `<p class="text-gray-600 text-sm">${apt.type}</p>` : ''}
+                        </div>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full ${statusColors[apt.status]}">${apt.status}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderWeeklySchedule() {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    return days.map(day => `
+        <div class="day-schedule p-4 border border-gray-200 rounded-lg">
+            <h3 class="font-semibold text-gray-800 mb-2">${day}</h3>
+            <div class="text-sm text-gray-600">
+                <div>4 appointments</div>
+                <div>9:00 AM - 4:00 PM</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showPatientList() {
+    document.getElementById('mainContent').innerHTML = `
+        <div class="patient-list">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">My Patients</h1>
+                <button onclick="addPatient()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    <i class="fas fa-plus mr-2"></i>Add Patient
+                </button>
+            </div>
+
+            <!-- Patient Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${renderPatientCards()}
+            </div>
+        </div>
+    `;
+}
+
+function renderPatientCards() {
+    const patients = [
+        { name: 'Mary Johnson', age: 78, risk: 'High', lastVisit: '2 days ago', avatar: 'MJ' },
+        { name: 'Robert Smith', age: 82, risk: 'Moderate', lastVisit: '1 week ago', avatar: 'RS' },
+        { name: 'Alice Brown', age: 75, risk: 'Low', lastVisit: '3 days ago', avatar: 'AB' },
+        { name: 'David Wilson', age: 79, risk: 'Moderate', lastVisit: '1 day ago', avatar: 'DW' }
+    ];
+
+    const riskColors = {
+        'High': 'bg-red-100 text-red-800 border-red-200',
+        'Moderate': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        'Low': 'bg-green-100 text-green-800 border-green-200'
+    };
+
+    return patients.map(patient => `
+        <div class="patient-card bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="font-semibold text-blue-600">${patient.avatar}</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">${patient.name}</h3>
+                    <p class="text-gray-600 text-sm">Age ${patient.age}</p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <span class="text-xs px-2 py-1 rounded-full ${riskColors[patient.risk]}">${patient.risk} Risk</span>
+            </div>
+            
+            <div class="text-sm text-gray-600 mb-4">
+                Last visit: ${patient.lastVisit}
+            </div>
+            
+            <div class="flex space-x-2">
+                <button onclick="viewPatientDetails('${patient.name}')" class="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600">
+                    View Details
+                </button>
+                <button onclick="schedulePatientVisit('${patient.name}')" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-300">
+                    Schedule
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showProviderSchedule() {
+    showAppointments(); // Use the same appointments view for now
+}
+
 // Main app renderer
 function renderApp() {
     const app = document.getElementById('app');
+    const isMobile = window.innerWidth <= 768;
+    const userRole = RoleBasedNavigation.getCurrentUserRole();
+    
+    // Check if user needs to select a role
+    if (currentUser && !userRole) {
+        app.innerHTML = RoleBasedNavigation.renderRoleSelection();
+        return;
+    }
+    
     app.innerHTML = `
         <!-- Header -->
         <div class="gradient-bg text-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="max-w-7xl mx-auto px-4 py-4 md:py-6">
                 <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-3">
-                        <i class="fas fa-home text-3xl"></i>
+                    <div class="flex items-center space-x-2 md:space-x-3">
+                        <i class="fas fa-home text-2xl md:text-3xl"></i>
                         <div>
-                            <h1 class="text-2xl font-bold">SafeAging Home</h1>
-                            <p class="text-sm opacity-90">Your AI-Powered Safety Partner</p>
+                            <h1 class="text-lg md:text-2xl font-bold">SafeAging</h1>
+                            <p class="text-xs md:text-sm opacity-90 hidden md:block">Your AI-Powered Safety Partner</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="text-right">
+                    <div class="flex items-center space-x-2 md:space-x-4">
+                        ${userRole ? `
+                            <div class="role-indicator">
+                                <span class="text-xs bg-white/20 px-2 py-1 rounded-full">
+                                    ${getRoleDisplayName(userRole)}
+                                </span>
+                            </div>
+                        ` : ''}
+                        <div class="text-right hidden md:block">
                             <p class="text-sm opacity-90">Welcome back,</p>
-                            <p class="font-semibold">${currentUser.name}</p>
+                            <p class="font-semibold">${currentUser ? currentUser.first_name || currentUser.name : 'Guest'}</p>
                         </div>
                         <button onclick="showAlerts()" class="relative p-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
-                            <i class="fas fa-bell text-xl"></i>
+                            <i class="fas fa-bell text-lg md:text-xl"></i>
                             <span id="alertBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </button>
+                        <button onclick="RoleBasedNavigation.showRoleSelector()" class="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition" title="Change Role">
+                            <i class="fas fa-user-cog text-lg md:text-xl"></i>
                         </button>
                     </div>
                 </div>
@@ -44,31 +347,15 @@ function renderApp() {
         </div>
 
         <!-- Navigation -->
-        <div class="bg-white shadow-sm border-b sticky top-0 z-10">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex space-x-1">
-                    <button onclick="showView('dashboard')" class="nav-btn ${currentView === 'dashboard' ? 'active' : ''}">
-                        <i class="fas fa-dashboard mr-2"></i>Dashboard
-                    </button>
-                    <button onclick="showView('assess')" class="nav-btn ${currentView === 'assess' ? 'active' : ''}">
-                        <i class="fas fa-camera mr-2"></i>Room Assessment
-                    </button>
-                    <button onclick="showView('plans')" class="nav-btn ${currentView === 'plans' ? 'active' : ''}">
-                        <i class="fas fa-clipboard-check mr-2"></i>Safety Plans
-                    </button>
-                    <button onclick="showView('equipment')" class="nav-btn ${currentView === 'equipment' ? 'active' : ''}">
-                        <i class="fas fa-shopping-cart mr-2"></i>Equipment
-                    </button>
-                    <button onclick="showView('caregiver')" class="nav-btn ${currentView === 'caregiver' ? 'active' : ''}">
-                        <i class="fas fa-users mr-2"></i>Caregivers
-                    </button>
-                    <button onclick="showView('clinical')" class="nav-btn ${currentView === 'clinical' ? 'active' : ''}">
-                        <i class="fas fa-stethoscope mr-2"></i>Clinical Assessment
-                    </button>
-                    <button onclick="showView('ptot')" class="nav-btn ${currentView === 'ptot' ? 'active' : ''}">
-                        <i class="fas fa-user-md mr-2"></i>PT/OT Portal
-                    </button>
-                </div>
+        <div class="${isMobile ? 'nav-container' : 'bg-white shadow-sm border-b sticky top-0 z-10'}">
+            <div class="${isMobile ? '' : 'max-w-7xl mx-auto px-4'}">
+                ${userRole ? RoleBasedNavigation.renderRoleNavigation(userRole, isMobile) : `
+                    <div class="flex justify-center py-4">
+                        <button onclick="RoleBasedNavigation.showRoleSelector()" class="bg-blue-500 text-white px-4 py-2 rounded-lg">
+                            Select Your Role
+                        </button>
+                    </div>
+                `}
             </div>
         </div>
 
@@ -119,10 +406,25 @@ function renderApp() {
 function showView(view) {
     currentView = view;
     const content = document.getElementById('mainContent');
+    const userRole = RoleBasedNavigation.getCurrentUserRole();
+    
+    // Update navigation active state
+    document.querySelectorAll('.nav-btn, .nav-btn-mobile').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = document.querySelector(`[onclick="showView('${view}')"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
     
     switch(view) {
         case 'dashboard':
-            showDashboard();
+            if (userRole) {
+                content.innerHTML = RoleBasedNavigation.renderRoleDashboard(userRole, currentUser);
+            } else {
+                showDashboard();
+            }
             break;
         case 'assess':
             showAssessment();
@@ -132,6 +434,23 @@ function showView(view) {
             break;
         case 'equipment':
             showEquipment();
+            break;
+        case 'appointments':
+            showAppointments();
+            break;
+        case 'patients':
+            if (userRole === RoleBasedNavigation.USER_ROLES.PROVIDER) {
+                showPatientList();
+            } else {
+                showUnauthorized();
+            }
+            break;
+        case 'schedule':
+            if (userRole === RoleBasedNavigation.USER_ROLES.PROVIDER) {
+                showProviderSchedule();
+            } else {
+                showAppointments();
+            }
             break;
         case 'caregiver':
             showCaregiverPortal();

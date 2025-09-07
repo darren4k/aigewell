@@ -11,21 +11,149 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 8787;
-const JWT_SECRET = 'your-super-secret-jwt-key-change-in-production';
+const PORT = process.env.PORT || 8787;
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 
 // Database setup
 const db = new Database('healthcare.db');
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Role-based permissions helper
+function getRolePermissions(role) {
+    const permissions = {
+        patient: ['view_own_data', 'schedule_appointments', 'take_assessments', 'view_equipment'],
+        caregiver: ['view_patient_data', 'schedule_appointments', 'receive_alerts', 'view_equipment'],
+        provider: ['view_all_patients', 'create_assessments', 'manage_schedule', 'generate_reports', 'prescribe_equipment']
+    };
+    return permissions[role] || [];
+}
+
+// Role-based authorization middleware
+function requireRole(allowedRoles) {
+    return (req, res, next) => {
+        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.auth_token;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            req.user = decoded;
+
+            if (!allowedRoles.includes(decoded.role)) {
+                return res.status(403).json({ error: 'Insufficient permissions' });
+            }
+
+            next();
+        } catch (error) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+    };
+}
+
+// Permission-based authorization middleware
+function requirePermission(permission) {
+    return (req, res, next) => {
+        if (!req.user || !req.user.permissions.includes(permission)) {
+            return res.status(403).json({ error: 'Insufficient permissions' });
+        }
+        next();
+    };
+}
+
+// Security middleware
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 auth attempts per windowMs
+  message: { error: 'Too many authentication attempts, please try again later' },
+  skipSuccessfulRequests: true
+});
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"]
+    }
+  }
+}));
+
+app.use(limiter);
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
+
+// Basic middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? process.env.ALLOWED_ORIGINS?.split(',') : true,
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('dist'));
+
+// Audit logging middleware
+const auditLog = (action, resource) => {
+  return (req, res, next) => {
+    if (process.env.ENABLE_AUDIT_LOGGING === 'true') {
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        user_id: req.user?.id || 'anonymous',
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('user-agent'),
+        action,
+        resource,
+        request_id: crypto.randomUUID()
+      };
+      
+      try {
+        db.prepare(`
+          INSERT INTO audit_logs (timestamp, user_id, ip_address, user_agent, action, resource, request_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          logEntry.timestamp,
+          logEntry.user_id,
+          logEntry.ip_address,
+          logEntry.user_agent,
+          logEntry.action,
+          logEntry.resource,
+          logEntry.request_id
+        );
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
+    }
+    next();
+  };
+};
 
 // File upload setup
 const upload = multer({ 
@@ -64,7 +192,7 @@ async function verifyPassword(password, hash) {
 // ===== AUTHENTICATION ROUTES =====
 
 // Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, auditLog('AUTH_REGISTER', 'users'), async (req, res) => {
     const { 
         email, 
         password, 
@@ -150,7 +278,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, auditLog('AUTH_LOGIN', 'users'), async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {

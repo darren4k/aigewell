@@ -1,6 +1,22 @@
 -- SafeAging Healthcare Database Schema
 -- Complete schema for authentication, assessments, appointments, and healthcare workflows
 
+-- Audit logs table for HIPAA compliance
+DROP TABLE IF EXISTS audit_logs;
+CREATE TABLE audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    action TEXT NOT NULL,
+    resource TEXT NOT NULL,
+    request_id TEXT,
+    result TEXT DEFAULT 'success',
+    metadata TEXT, -- JSON for additional context
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table with healthcare roles
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
