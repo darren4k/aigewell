@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-09-07T04:06:06.674Z",
+  "summary": {
+    "totalTests": 34,
+    "passRate": 100,
+    "qualityGrade": "C+",
+    "codeCoverage": 77
+  },
+  "categoryResults": {
+    "unit": {
+      "passed": 6,
+      "failed": 0,
+      "coverage": 77
+    },
+    "integration": {
+      "passed": 5,
+      "failed": 0
+    },
+    "clinical": {
+      "passed": 6,
+      "failed": 0
+    },
+    "security": {
+      "passed": 6,
+      "failed": 0
+    },
+    "accessibility": {
+      "passed": 6,
+      "failed": 0
+    },
+    "performance": {
+      "passed": 5,
+      "failed": 0
+    },
+    "total": {
+      "passed": 34,
+      "failed": 0
+    }
+  },
+  "issues": [
+    {
+      "category": "Unit Tests",
+      "issue": "Code coverage (77%) below threshold (80%)",
+      "error": "Code coverage is 77%, below required 80%",
+      "severity": "medium",
+      "recommendation": "Add unit tests for uncovered code paths"
+    }
+  ],
+  "recommendations": [
+    "Increase unit test coverage to meet 80% threshold",
+    "Implement continuous integration testing pipeline",
+    "Set up automated regression testing",
+    "Establish performance monitoring in production"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "appId": "com.safeaging.app",
+  "appName": "SafeAging Home",
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "style": "LIGHT_CONTENT",
+      "backgroundColor": "#667eea"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#667eea",
+      "showSpinner": false,
+      "androidSpinnerStyle": "small",
+      "iosSpinnerStyle": "small"
+    },
+    "Keyboard": {
+      "resize": "body"
+    },
+    "Camera": {
+      "permissions": ["camera"]
+    }
+  },
+  "ios": {
+    "scheme": "SafeAging",
+    "contentInset": "always"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

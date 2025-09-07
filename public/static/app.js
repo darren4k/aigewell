@@ -867,6 +867,6 @@ async function addCaregiver() {
         alert('Caregiver added successfully!');
         showCaregiverPortal();
     } catch (error) {
-        console.error('Failed to add caregiver:', error);
+        console.error('Failed to add caregiver');
     }
 }

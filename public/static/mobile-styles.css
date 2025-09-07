@@ -1,0 +1,494 @@
+/* SafeAging Mobile App Styles - Healthcare Optimized */
+
+/* Mobile-first responsive design for healthcare professionals */
+:root {
+  --mobile-header-height: 60px;
+  --mobile-nav-height: 50px;
+  --healthcare-primary: #667eea;
+  --healthcare-secondary: #764ba2;
+  --touch-target-min: 44px;
+  --senior-font-base: 18px;
+}
+
+/* Safe area support for notched devices (iPhone X+) */
+.app-container {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile viewport optimization */
+@media screen and (max-width: 768px) {
+  /* Prevent zoom on input focus (iOS Safari) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Healthcare professional touch targets */
+  .nav-btn, 
+  .btn, 
+  button,
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    padding: 12px 16px;
+    font-size: var(--senior-font-base);
+  }
+
+  /* Clinical assessment form optimization */
+  .clinical-assessment-wizard {
+    padding: 16px;
+    max-width: 100%;
+  }
+  
+  .assessment-step {
+    margin-bottom: 24px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #2d3748;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+  
+  .form-control:focus {
+    border-color: var(--healthcare-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* Camera integration mobile styling */
+  .camera-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .take-photo-btn {
+    background: linear-gradient(135deg, var(--healthcare-primary), var(--healthcare-secondary));
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    width: 100%;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .photo-preview {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  /* Navigation optimization for healthcare workflows */
+  .nav-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 8px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: var(--mobile-nav-height);
+  }
+  
+  .nav-btn-mobile {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: var(--touch-target-min);
+  }
+  
+  .nav-btn-mobile.active {
+    color: var(--healthcare-primary);
+    font-weight: 600;
+  }
+  
+  .nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  /* Clinical dashboard mobile optimization */
+  .dashboard-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    margin-bottom: 60px; /* Account for bottom navigation */
+  }
+  
+  .dashboard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+  }
+  
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 12px;
+  }
+  
+  .card-content {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.5;
+  }
+
+  /* Assessment scoring mobile display */
+  .risk-score-display {
+    background: linear-gradient(135deg, #f7fafc, #edf2f7);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin: 20px 0;
+    border: 2px solid #e2e8f0;
+  }
+  
+  .risk-score-number {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--healthcare-primary);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  
+  .risk-score-label {
+    font-size: 16px;
+    color: #4a5568;
+    font-weight: 500;
+  }
+  
+  .risk-level-high { color: #e53e3e; }
+  .risk-level-moderate { color: #d69e2e; }
+  .risk-level-low { color: #38a169; }
+
+  /* Healthcare accessibility enhancements */
+  .accessibility-toolbar {
+    position: fixed;
+    top: env(safe-area-inset-top, 0);
+    right: 16px;
+    z-index: 1001;
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+  }
+  
+  .accessibility-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a5568;
+    margin: 2px 0;
+  }
+  
+  .accessibility-btn:active {
+    background: var(--healthcare-primary);
+    color: white;
+  }
+
+  /* Loading states for clinical workflows */
+  .loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-radius: 50%;
+    border-top-color: var(--healthcare-primary);
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 2000;
+  }
+  
+  .loading-text {
+    margin-top: 16px;
+    font-size: 16px;
+    color: #4a5568;
+    text-align: center;
+  }
+
+  /* Clinical forms mobile optimization */
+  .assessment-form {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  
+  .form-section {
+    margin-bottom: 32px;
+  }
+  
+  .form-section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  
+  .checkbox-group,
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .checkbox-item,
+  .radio-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .checkbox-item:hover,
+  .radio-item:hover {
+    background: #edf2f7;
+  }
+  
+  .checkbox-item input,
+  .radio-item input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+
+  /* Progress indicators for assessments */
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--healthcare-primary), var(--healthcare-secondary));
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  .step-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px 0;
+    padding: 0 8px;
+  }
+  
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+  }
+  
+  .step-dot.active {
+    background: var(--healthcare-primary);
+    color: white;
+  }
+  
+  .step-dot.completed {
+    background: #38a169;
+    color: white;
+  }
+
+  /* Error and success states */
+  .alert {
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  
+  .alert-success {
+    background: #f0fff4;
+    color: #22543d;
+    border: 1px solid #9ae6b4;
+  }
+  
+  .alert-warning {
+    background: #fffbeb;
+    color: #744210;
+    border: 1px solid #f6e05e;
+  }
+  
+  .alert-error {
+    background: #fed7d7;
+    color: #742a2a;
+    border: 1px solid #fc8181;
+  }
+
+  /* Footer spacing for bottom navigation */
+  .main-content {
+    padding-bottom: calc(var(--mobile-nav-height) + 16px);
+  }
+}
+
+/* Tablet landscape optimizations */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .clinical-assessment-wizard {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+  
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 24px;
+  }
+  
+  .nav-container {
+    position: relative;
+    height: auto;
+    border: none;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px;
+    background: transparent;
+  }
+  
+  .nav-btn-mobile {
+    flex: none;
+    min-width: 120px;
+  }
+}
+
+/* Dark mode support for accessibility */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --healthcare-primary: #818cf8;
+    --healthcare-secondary: #a78bfa;
+  }
+  
+  .app-container {
+    background: #1a202c;
+    color: #f7fafc;
+  }
+  
+  .dashboard-card,
+  .assessment-form {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #f7fafc;
+  }
+  
+  .form-control {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #f7fafc;
+  }
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+  .btn,
+  .nav-btn,
+  .take-photo-btn {
+    border: 2px solid currentColor;
+  }
+  
+  .risk-score-display {
+    border: 3px solid #1a202c;
+  }
+  
+  .form-control:focus {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .loading-spinner {
+    animation: none;
+    border-top-color: var(--healthcare-primary);
+  }
+}

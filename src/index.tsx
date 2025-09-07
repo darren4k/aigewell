@@ -4,12 +4,14 @@ import { serveStatic } from 'hono/cloudflare-pages'
 import ptotApi from './ptot-evaluation'
 import standardizedApi from './standardized-assessments'
 import clinicalApi from './clinical-assessment-prototype'
+import authApi from './auth'
 
 type Bindings = {
   DB: D1Database
   KV: KVNamespace
   R2: R2Bucket
   OPENAI_API_KEY?: string
+  JWT_SECRET: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -28,6 +30,9 @@ app.route('/api/assessments/standardized', standardizedApi)
 
 // Mount clinical assessment API
 app.route('/api/clinical', clinicalApi)
+
+// Mount authentication API
+app.route('/api/auth', authApi)
 
 // ===================
 // API Routes
@@ -211,6 +216,61 @@ app.get('/api/alerts/:userId', async (c) => {
   `).bind(userId).all()
 
   return c.json({ alerts: alerts.results })
+})
+
+// Clinical assessments endpoints
+app.post('/api/clinical-assessments', async (c) => {
+  const { env } = c
+  const { assessmentType, responses, status, results } = await c.req.json()
+
+  // Require authentication
+  const token = getCookie(c, 'auth_token') || c.req.header('Authorization')?.replace('Bearer ', '')
+  if (!token) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+
+  // Get user from token (simplified - in production, verify JWT)
+  const user = c.get('user') || { userId: 1 } // Fallback for demo
+
+  try {
+    const result = await env.DB.prepare(`
+      INSERT INTO clinical_assessments (
+        user_id, assessment_type, responses, scores, 
+        risk_level, recommendations, status, completed_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      user.userId,
+      assessmentType,
+      responses,
+      results ? JSON.stringify(results) : null,
+      results?.riskLevel || null,
+      results?.recommendations ? JSON.stringify(results.recommendations) : null,
+      status,
+      status === 'completed' ? new Date().toISOString() : null
+    ).run()
+
+    return c.json({ 
+      success: true, 
+      assessmentId: result.meta.last_row_id 
+    })
+  } catch (error) {
+    console.error('Clinical assessment save error:', error)
+    return c.json({ error: 'Failed to save assessment' }, 500)
+  }
+})
+
+app.get('/api/clinical-assessments/:userId', async (c) => {
+  const { env } = c
+  const userId = c.req.param('userId')
+
+  const assessments = await env.DB.prepare(`
+    SELECT * FROM clinical_assessments 
+    WHERE user_id = ? 
+    ORDER BY completed_at DESC, created_at DESC
+  `).bind(userId).all()
+
+  return c.json({ assessments: assessments.results })
 })
 
 // Mark alert as read
@@ -410,10 +470,14 @@ app.get('/', (c) => {
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="light-content">
+        <meta name="theme-color" content="#667eea">
         <title>SafeAging Home - AI-Powered Home Safety Assessment</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/mobile-styles.css" rel="stylesheet">
         <style>
           .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -428,6 +492,9 @@ app.get('/', (c) => {
         <div id="app"></div>
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/auth.js"></script>
+        <script src="/static/camera.js"></script>
+        <script src="/static/assessment-engine.js"></script>
         <script src="/static/accessibility.js"></script>
         <script src="/static/ptot-dashboard.js"></script>
         <script src="/static/clinical-dashboard.js"></script>
