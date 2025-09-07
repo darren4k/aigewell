@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-pages'
+import clinicalApi from './clinical-assessment'
 
 type Bindings = {
   DB?: D1Database
@@ -16,6 +17,9 @@ app.use('/api/*', cors())
 
 // Serve static files
 app.use('/static/*', serveStatic())
+
+// Mount clinical assessment API
+app.route('/api/clinical', clinicalApi)
 
 // ===================
 // API Routes
@@ -416,6 +420,8 @@ app.get('/', (c) => {
         <div id="app"></div>
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/accessibility.js"></script>
+        <script src="/static/clinical-dashboard.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>

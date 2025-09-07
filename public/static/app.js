@@ -62,6 +62,9 @@ function renderApp() {
                     <button onclick="showView('caregiver')" class="nav-btn ${currentView === 'caregiver' ? 'active' : ''}">
                         <i class="fas fa-users mr-2"></i>Caregivers
                     </button>
+                    <button onclick="showView('clinical')" class="nav-btn ${currentView === 'clinical' ? 'active' : ''}">
+                        <i class="fas fa-stethoscope mr-2"></i>Clinical Assessment
+                    </button>
                 </div>
             </div>
         </div>
@@ -129,6 +132,11 @@ function showView(view) {
             break;
         case 'caregiver':
             showCaregiverPortal();
+            break;
+        case 'clinical':
+            if (typeof initClinicalDashboard === 'function') {
+                initClinicalDashboard();
+            }
             break;
     }
     
