@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-pages'
 import ptotApi from './ptot-evaluation'
+import standardizedApi from './standardized-assessments'
 
 type Bindings = {
   DB: D1Database
@@ -20,6 +21,9 @@ app.use('/static/*', serveStatic())
 
 // Mount PT/OT evaluation API
 app.route('/api/ptot', ptotApi)
+
+// Mount standardized assessments API
+app.route('/api/assessments/standardized', standardizedApi)
 
 // ===================
 // API Routes
@@ -420,6 +424,7 @@ app.get('/', (c) => {
         <div id="app"></div>
         
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/accessibility.js"></script>
         <script src="/static/ptot-dashboard.js"></script>
         <script src="/static/app.js"></script>
     </body>
