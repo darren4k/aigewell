@@ -14,14 +14,24 @@ export function xssProtection(req, res, next) {
             req.body = sanitizeObject(req.body);
         }
 
-        // Sanitize query parameters
+        // Sanitize query parameters (Express 5.x compatible)
         if (req.query && typeof req.query === 'object') {
-            req.query = sanitizeObject(req.query);
+            const sanitizedQuery = sanitizeObject(req.query);
+            // Only modify if sanitization changed anything
+            if (JSON.stringify(sanitizedQuery) !== JSON.stringify(req.query)) {
+                Object.keys(req.query).forEach(key => delete req.query[key]);
+                Object.assign(req.query, sanitizedQuery);
+            }
         }
 
-        // Sanitize URL parameters
+        // Sanitize URL parameters (Express 5.x compatible)  
         if (req.params && typeof req.params === 'object') {
-            req.params = sanitizeObject(req.params);
+            const sanitizedParams = sanitizeObject(req.params);
+            // Only modify if sanitization changed anything
+            if (JSON.stringify(sanitizedParams) !== JSON.stringify(req.params)) {
+                Object.keys(req.params).forEach(key => delete req.params[key]);
+                Object.assign(req.params, sanitizedParams);
+            }
         }
 
         next();
@@ -78,9 +88,13 @@ export function sqlInjectionProtection(req, res, next) {
             req.body = checkForSQLInjection(req.body);
         }
 
-        // Sanitize query parameters
+        // Sanitize query parameters (Express 5.x compatible)
         if (req.query) {
-            req.query = checkForSQLInjection(req.query);
+            const sanitizedQuery = checkForSQLInjection(req.query);
+            if (JSON.stringify(sanitizedQuery) !== JSON.stringify(req.query)) {
+                Object.keys(req.query).forEach(key => delete req.query[key]);
+                Object.assign(req.query, sanitizedQuery);
+            }
         }
 
         next();

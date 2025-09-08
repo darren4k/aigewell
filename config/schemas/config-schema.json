@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["app", "llm", "routing", "agents", "security", "observability"],
+  "properties": {
+    "app": {
+      "type": "object",
+      "required": ["name", "env", "logLevel"],
+      "properties": {
+        "name": { "type": "string" },
+        "env": { "type": "string" },
+        "region": { "type": "string" },
+        "logLevel": { "enum": ["debug", "info", "warn", "error"] },
+        "redact": { 
+          "type": "array", 
+          "items": { "type": "string" } 
+        },
+        "piiFields": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "tenancy": {
+      "type": "object",
+      "properties": {
+        "defaultTenant": { "type": "string" },
+        "allowCrossTenant": { "type": "boolean" },
+        "tenants": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "llm": {
+      "type": "object",
+      "required": ["defaultProvider", "defaultModel", "adapters"],
+      "properties": {
+        "defaultProvider": { "type": "string" },
+        "defaultModel": { "type": "string" },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "topP": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxTokens": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "parallelToolCalls": { "type": "boolean" },
+        "adapters": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "object",
+              "properties": {
+                "endpoint": { "type": "string", "format": "uri" },
+                "apiKey": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "match"],
+            "properties": {
+              "name": { "type": "string" },
+              "match": { "type": "string" },
+              "provider": { "type": "string" },
+              "model": { "type": "string" },
+              "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+              "strategy": { "enum": ["default", "fallback"] },
+              "budget": {
+                "type": "object",
+                "properties": {
+                  "maxCostUSD": { "type": "number", "minimum": 0 },
+                  "maxLatencyMs": { "type": "integer", "minimum": 0 }
+                }
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": { "type": "string" },
+                    "model": { "type": "string" },
+                    "temperature": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "systemPrompt": { "type": "string" },
+            "outputSchema": { "type": "string" },
+            "tools": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "retry": {
+              "type": "object",
+              "properties": {
+                "max": { "type": "integer", "minimum": 0 },
+                "backoffMs": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "cacheKey": { "type": "string" },
+            "sandbox": { "type": "string" },
+            "idempotent": { "type": "boolean" },
+            "specialization": { "type": "string" },
+            "requiredPolicies": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "sanitizeInputs": { "type": "boolean" },
+        "outputValidation": { "type": "boolean" },
+        "allowlistDomains": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "toolScopes": { "type": "object" },
+        "dataResidency": { "type": "string" },
+        "retentionDays": { "type": "integer", "minimum": 1 },
+        "hipaaCompliant": { "type": "boolean" },
+        "encryptAtRest": { "type": "boolean" }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "properties": {
+        "tracing": { "type": "string" },
+        "sampleRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "metrics": { "type": "object" },
+        "logs": { "type": "object" }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string" },
+        "tokenPrices": { "type": "object" },
+        "hardLimits": {
+          "type": "object",
+          "properties": {
+            "daily": { "type": "number", "minimum": 0 },
+            "monthly": { "type": "number", "minimum": 0 },
+            "perTenant": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

@@ -127,17 +127,25 @@ import { xssProtection, sqlInjectionProtection, hipaaProtection, createSensitive
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
+  max: process.env.RATE_LIMIT_MAX_REQUESTS || (process.env.NODE_ENV === 'test' ? 10000 : 100),
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for test environment
+    return process.env.NODE_ENV === 'test';
+  }
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth attempts per windowMs
+  max: process.env.NODE_ENV === 'test' ? 1000 : 5, // Higher limit for testing
   message: { error: 'Too many authentication attempts, please try again later' },
-  skipSuccessfulRequests: true
+  skipSuccessfulRequests: true,
+  skip: (req) => {
+    // Skip rate limiting for test environment
+    return process.env.NODE_ENV === 'test';
+  }
 });
 
 // Enhanced rate limiter for sensitive operations (payments, etc.)
@@ -238,6 +246,12 @@ function authenticateToken(req, res, next) {
         if (err) {
             return res.status(403).json({ error: 'Invalid token' });
         }
+        
+        // Attach permissions to user object if not already present
+        if (!user.permissions && user.role) {
+            user.permissions = getRolePermissions(user.role);
+        }
+        
         req.user = user;
         next();
     });
@@ -681,7 +695,7 @@ app.post('/api/appointments', authenticateToken, auditLog('APPOINTMENT_BOOKING',
         contact_preference = 'phone'
     } = req.body;
     
-    const patient_id = req.user.userId;
+    const user_id = req.user.userId;
 
     // Validate required fields
     if (!provider_id || !scheduled_at || !appointment_type) {
@@ -693,7 +707,7 @@ app.post('/api/appointments', authenticateToken, auditLog('APPOINTMENT_BOOKING',
 
     try {
         const bookingResult = await appointmentService.bookAppointment({
-            patient_id,
+            user_id,
             provider_id,
             scheduled_at,
             appointment_type,

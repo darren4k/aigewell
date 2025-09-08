@@ -1,0 +1,175 @@
+app:
+  name: safeaging-superagents
+  env: ${APP_ENV:dev}
+  region: us-east-1
+  logLevel: info
+  redact: [apiKey, accessToken, token, cookie, password]
+  piiFields: [email, phone, address, ssn, healthRecord]
+
+tenancy:
+  defaultTenant: healthcare
+  allowCrossTenant: false
+  tenants:
+    - healthcare
+    - provider
+    - caregiver
+
+flags:
+  file: config/flags.yml
+
+llm:
+  defaultProvider: anthropic
+  defaultModel: claude-3-5-sonnet
+  temperature: 0.2
+  topP: 1
+  maxTokens: 4096
+  parallelToolCalls: true
+  adapters:
+    anthropic:
+      endpoint: https://api.anthropic.com
+      apiKey: ${ANTHROPIC_API_KEY}
+    openai:
+      endpoint: https://api.openai.com
+      apiKey: ${OPENAI_API_KEY}
+    local:
+      endpoint: ${LOCAL_LLM_ENDPOINT:http://localhost:11434}
+      apiKey: ${LOCAL_API_KEY:}
+
+routing:
+  rules:
+    - name: healthcare_assessments
+      match: "assessment.*|safety.*|risk.*"
+      provider: anthropic
+      model: claude-3-5-sonnet
+      temperature: 0.1
+      budget:
+        maxCostUSD: 0.15
+        maxLatencyMs: 5000
+    - name: appointment_scheduling
+      match: "appointment.*|schedule.*|calendar.*"
+      provider: anthropic
+      model: claude-3-5-sonnet
+      temperature: 0.2
+      budget:
+        maxCostUSD: 0.08
+        maxLatencyMs: 3000
+    - name: general_queries
+      match: "faq.*|help.*|support.*"
+      provider: anthropic
+      model: claude-3-haiku
+      temperature: 0.3
+      budget:
+        maxCostUSD: 0.02
+        maxLatencyMs: 2000
+    - name: critical_healthcare
+      match: "emergency.*|urgent.*|medical.*"
+      strategy: "fallback"
+      candidates:
+        - { provider: anthropic, model: claude-3-5-sonnet, temperature: 0.0 }
+        - { provider: openai, model: gpt-4o, temperature: 0.0 }
+
+agents:
+  healthcarePlanner:
+    systemPrompt: prompts/healthcare-planner/system.md
+    outputSchema: schemas/healthcare-plan.json
+    tools: [search, medical_knowledge, safety_assessment, flags]
+    retry: { max: 3, backoffMs: 500 }
+    cacheKey: "healthcare-planner:v1"
+    specialization: "healthcare safety and aging in place"
+  careCoordinator:
+    systemPrompt: prompts/care-coordinator/system.md
+    tools: [appointment_service, provider_network, emergency_contacts, notifications]
+    sandbox: "healthcare-secure"
+    retry: { max: 2, backoffMs: 300 }
+    idempotent: true
+    specialization: "care coordination and service delivery"
+  safetyReviewer:
+    systemPrompt: prompts/safety-reviewer/system.md
+    tools: [safety_policy_check, accessibility_audit, medical_compliance]
+    requiredPolicies: ["hipaa", "ada", "healthcare-safety"]
+    specialization: "healthcare compliance and safety validation"
+
+security:
+  sanitizeInputs: true
+  outputValidation: true
+  allowlistDomains: ["safeaging.pages.dev", "api.safeaging.com", "medical-apis.gov"]
+  toolScopes:
+    appointment_service: ["read", "write", "schedule"]
+    medical_knowledge: ["read"]
+    safety_assessment: ["read", "write:assessments"]
+    provider_network: ["read", "lookup"]
+  dataResidency: "us"
+  retentionDays: 90  # Healthcare compliance
+  hipaaCompliant: true
+  encryptAtRest: true
+  sdlc:
+    threatModelFile: "docs/threat-model.md"
+
+observability:
+  tracing: otlp
+  otlpEndpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+  sampleRate: 0.3
+  metrics:
+    provider: prometheus
+    path: /metrics
+    healthcareSpecific:
+      - appointment_success_rate
+      - assessment_completion_time
+      - safety_alert_response_time
+  logs:
+    format: json
+    piiRedaction: true
+    hipaaAuditLog: true
+
+cost:
+  currency: USD
+  tokenPrices:
+    anthropic/claude-3-5-sonnet: { input: 0.003, output: 0.015 }
+    anthropic/claude-3-haiku: { input: 0.0008, output: 0.004 }
+    openai/gpt-4o: { input: 0.005, output: 0.015 }
+  hardLimits:
+    daily: 100.0
+    monthly: 2000.0
+    perTenant: 500.0
+
+evals:
+  suites:
+    - name: healthcare_safety_smoke
+      path: tests/evals/healthcare
+      passRate: 0.95  # Higher standard for healthcare
+    - name: appointment_workflow
+      path: tests/evals/appointments
+      passRate: 0.90
+    - name: accessibility_compliance
+      path: tests/evals/accessibility
+      passRate: 0.92
+
+cache:
+  provider: redis
+  url: ${REDIS_URL}
+  semantic:
+    provider: pgvector
+    connection: ${DATABASE_URL}
+    topK: 10
+    minScore: 0.82  # Higher threshold for healthcare
+  ttl:
+    default: 3600
+    medical_knowledge: 86400
+    safety_assessments: 1800
+
+rateLimit:
+  rps: 5
+  burst: 10
+  healthcareEmergency:
+    rps: 20  # Higher limits for emergency scenarios
+    burst: 50
+
+privacy:
+  kAnonymityMin: 5
+  differentialPrivacy:
+    enabled: true
+    epsilon: 1.0
+  hipaaCompliance:
+    enabled: true
+    auditLogging: true
+    encryptionRequired: true

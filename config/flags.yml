@@ -1,0 +1,33 @@
+flags:
+  enableHealthcareReviewer: true
+  enableSemanticCache: true
+  enableAdvancedSafetyChecks: true
+  enableEmergencyEscalation: true
+  enableMultiTenantMode: false
+  enableHipaaAuditMode: true
+  enableAccessibilityEnhancements: true
+  enableLocalLLMFallback: false
+  canaryUserPercent: 15
+  betaFeaturesEnabled: true
+  
+# Feature rollout controls
+rollout:
+  careCoordinatorAgent: 100  # Fully deployed
+  safetyReviewerAgent: 80    # 80% of users
+  emergencyDetection: 95     # Critical feature - high rollout
+  semanticSearch: 60         # Gradual rollout
+  
+# Healthcare-specific flags  
+healthcare:
+  enableMedicalKnowledgeBase: true
+  enableDrugInteractionChecks: false  # Not implemented yet
+  enableVitalSignsMonitoring: false   # Future feature
+  enableTelehealthIntegration: true
+  requirePhysicianApproval: false     # For critical recommendations
+  
+# Compliance flags
+compliance:
+  enforceHipaaLogging: true
+  requireDataEncryption: true
+  enableAuditTrails: true
+  enforceAccessControls: true

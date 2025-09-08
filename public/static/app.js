@@ -1119,18 +1119,223 @@ async function markAlertRead(alertId) {
 }
 
 function scheduleAppointment() {
-    const date = prompt('Enter appointment date and time (YYYY-MM-DD HH:MM):');
-    if (date) {
-        axios.post(`${API_BASE}/appointments`, {
-            userId: currentUser.id,
-            scheduledAt: date,
-            type: 'video',
-            notes: 'Safety assessment review'
-        }).then(() => {
-            alert('Appointment scheduled successfully!');
-            loadUserData();
-        });
+    showAppointmentModal();
+}
+
+function showAppointmentModal() {
+    const modalHTML = `
+        <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <i class="fas fa-calendar-plus mr-2 text-blue-500"></i>
+                            Schedule Appointment
+                        </h2>
+                        <button onclick="closeAppointmentModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="appointmentForm" onsubmit="submitAppointment(event)">
+                        <!-- Date Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-calendar mr-1"></i>
+                                Select Date
+                            </label>
+                            <input 
+                                type="date" 
+                                id="appointmentDate" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                                min="${new Date().toISOString().split('T')[0]}"
+                                required
+                            />
+                        </div>
+                        
+                        <!-- Time Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-clock mr-1"></i>
+                                Select Time
+                            </label>
+                            <div class="grid grid-cols-3 gap-2" id="timeSlots">
+                                <!-- Time slots will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Appointment Type -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-video mr-1"></i>
+                                Appointment Type
+                            </label>
+                            <select id="appointmentType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg">
+                                <option value="video">Video Consultation</option>
+                                <option value="phone">Phone Call</option>
+                                <option value="in_person">In-Person Visit</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-notes-medical mr-1"></i>
+                                Notes (Optional)
+                            </label>
+                            <textarea 
+                                id="appointmentNotes" 
+                                rows="3" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                                placeholder="Describe what you'd like to discuss during the appointment..."
+                            ></textarea>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button 
+                                type="button" 
+                                onclick="closeAppointmentModal()" 
+                                class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                id="scheduleBtn"
+                            >
+                                <i class="fas fa-check mr-2"></i>
+                                Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    populateTimeSlots();
+    
+    // Focus management for accessibility
+    document.getElementById('appointmentDate').focus();
+}
+
+function populateTimeSlots() {
+    const timeSlots = document.getElementById('timeSlots');
+    const slots = [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00'
+    ];
+    
+    timeSlots.innerHTML = slots.map(time => `
+        <button 
+            type="button" 
+            class="time-slot p-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
+            data-time="${time}"
+            onclick="selectTimeSlot(this, '${time}')"
+        >
+            ${time}
+        </button>
+    `).join('');
+}
+
+function selectTimeSlot(button, time) {
+    // Remove selection from all time slots
+    document.querySelectorAll('.time-slot').forEach(slot => {
+        slot.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+        slot.classList.add('border-gray-300');
+    });
+    
+    // Add selection to clicked slot
+    button.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+    button.classList.remove('border-gray-300');
+    
+    // Store selected time
+    button.closest('form').setAttribute('data-selected-time', time);
+}
+
+function closeAppointmentModal() {
+    const modal = document.getElementById('appointmentModal');
+    if (modal) {
+        modal.remove();
     }
+}
+
+function submitAppointment(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const date = document.getElementById('appointmentDate').value;
+    const selectedTime = form.getAttribute('data-selected-time');
+    const type = document.getElementById('appointmentType').value;
+    const notes = document.getElementById('appointmentNotes').value || 'Safety assessment review';
+    
+    if (!date) {
+        alert('Please select a date for your appointment.');
+        return;
+    }
+    
+    if (!selectedTime) {
+        alert('Please select a time slot for your appointment.');
+        return;
+    }
+    
+    // Combine date and time
+    const scheduledAt = `${date} ${selectedTime}:00`;
+    const scheduleBtn = document.getElementById('scheduleBtn');
+    
+    // Show loading state
+    scheduleBtn.disabled = true;
+    scheduleBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Scheduling...';
+    
+    axios.post(`${API_BASE}/appointments`, {
+        user_id: currentUser.id,
+        provider_id: 3, // Default provider for demo
+        scheduled_at: scheduledAt,
+        appointment_type: type,
+        notes: notes
+    }).then(() => {
+        // Show success message
+        showSuccessMessage('Appointment scheduled successfully!');
+        
+        // Close modal
+        closeAppointmentModal();
+        
+        // Refresh user data to show new appointment
+        loadUserData();
+        
+    }).catch(error => {
+        console.error('Failed to schedule appointment:', error);
+        
+        // Reset button state
+        scheduleBtn.disabled = false;
+        scheduleBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Schedule';
+        
+        // Show error message
+        alert('Failed to schedule appointment. Please try again.');
+    });
+}
+
+function showSuccessMessage(message) {
+    const successHTML = `
+        <div id="successToast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', successHTML);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        const toast = document.getElementById('successToast');
+        if (toast) {
+            toast.remove();
+        }
+    }, 3000);
 }
 
 async function generateNewPlan() {

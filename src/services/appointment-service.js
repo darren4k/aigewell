@@ -256,7 +256,7 @@ class AppointmentBookingService {
   async bookAppointment(appointmentData) {
     try {
       const {
-        patient_id,
+        user_id,
         provider_id,
         scheduled_at,
         appointment_type,
@@ -278,20 +278,15 @@ class AppointmentBookingService {
       // Create appointment record
       const result = this.db.prepare(`
         INSERT INTO appointments (
-          id, patient_id, provider_id, scheduled_at, type, duration,
-          status, notes, insurance_info, contact_preference, 
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, datetime('now'), datetime('now'))
+          user_id, provider_id, scheduled_at, type,
+          status, notes, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'scheduled', ?, datetime('now'), datetime('now'))
       `).run(
-        appointmentId,
-        patient_id,
-        provider_id,
+        parseInt(user_id),
+        parseInt(provider_id),
         scheduled_at,
         appointment_type,
-        duration,
-        notes,
-        JSON.stringify(insurance_info),
-        contact_preference
+        notes
       );
 
       // Get appointment details for confirmation
@@ -354,7 +349,7 @@ class AppointmentBookingService {
         u2.first_name as provider_first_name, u2.last_name as provider_last_name,
         u2.provider_type, u2.email as provider_email, u2.phone as provider_phone
       FROM appointments a
-      JOIN users u1 ON a.patient_id = u1.id
+      JOIN users u1 ON a.user_id = u1.id
       JOIN users u2 ON a.provider_id = u2.id
       WHERE a.id = ?
     `).get(appointmentId);
@@ -448,7 +443,7 @@ class AppointmentBookingService {
         u2.first_name as provider_first_name, u2.last_name as provider_last_name,
         u2.provider_type
       FROM appointments a
-      JOIN users u1 ON a.patient_id = u1.id
+      JOIN users u1 ON a.user_id = u1.id
       JOIN users u2 ON a.provider_id = u2.id
       WHERE 
     `;
@@ -458,7 +453,7 @@ class AppointmentBookingService {
     if (role === 'provider') {
       query += 'a.provider_id = ?';
     } else {
-      query += 'a.patient_id = ?';
+      query += 'a.user_id = ?';
     }
 
     if (status) {

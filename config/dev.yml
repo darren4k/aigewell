@@ -1,0 +1,30 @@
+# Development environment overrides
+app:
+  logLevel: debug
+  
+observability:
+  sampleRate: 1.0
+  
+llm:
+  defaultModel: claude-3-haiku  # Faster/cheaper for development
+  
+cost:
+  hardLimits:
+    daily: 20.0
+    monthly: 200.0
+    perTenant: 50.0
+    
+evals:
+  suites:
+    - name: healthcare_safety_smoke
+      passRate: 0.85  # Relaxed for development
+    - name: appointment_workflow
+      passRate: 0.80
+      
+cache:
+  ttl:
+    default: 300  # Shorter cache for development
+    
+rateLimit:
+  rps: 10  # Higher limits for development
+  burst: 20

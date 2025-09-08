@@ -10,6 +10,97 @@
   --senior-font-base: 18px;
 }
 
+/* Modern Appointment Modal Styles */
+#appointmentModal {
+  backdrop-filter: blur(4px);
+}
+
+#appointmentModal .bg-white {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Time slot selection grid - senior-friendly large touch targets */
+.time-slot {
+  min-height: 48px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.time-slot:hover {
+  background-color: #EBF4FF;
+  border-color: #3B82F6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.time-slot:active {
+  transform: translateY(0);
+}
+
+/* Success toast animation */
+#successToast {
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile-specific modal styling */
+@media screen and (max-width: 640px) {
+  #appointmentModal .max-w-md {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+  
+  #appointmentModal .p-6 {
+    padding: 1rem;
+  }
+  
+  /* Make time slots larger on mobile */
+  #timeSlots {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .time-slot {
+    min-height: 52px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  /* Larger form elements for seniors */
+  #appointmentModal input,
+  #appointmentModal select,
+  #appointmentModal textarea {
+    padding: 1rem;
+    font-size: 18px;
+  }
+  
+  #appointmentModal button {
+    min-height: 48px;
+    font-size: 16px;
+  }
+}
+
 /* Safe area support for notched devices (iPhone X+) */
 .app-container {
   padding-top: env(safe-area-inset-top);
