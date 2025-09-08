@@ -18,7 +18,29 @@
       "resize": "body"
     },
     "Camera": {
-      "permissions": ["camera"]
+      "permissions": ["camera", "photos"],
+      "allowEditing": true,
+      "quality": 90,
+      "saveToGallery": true
+    },
+    "Geolocation": {
+      "permissions": ["location"],
+      "enableHighAccuracy": true,
+      "timeout": 10000
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#667eea",
+      "sound": "beep.wav"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "App": {
+      "appendUserAgent": "SafeAging-Healthcare-App"
+    },
+    "Network": {
+      "url": "https://httpbin.org/get"
     }
   },
   "ios": {

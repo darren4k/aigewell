@@ -78,12 +78,12 @@ describe('End-to-End User Journey Tests', function() {
             // Step 1: Patient Registration
             console.log('Step 1: Patient Registration');
             const patientRegister = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send({
                     email: 'patient@journey.com',
                     password: 'securePass123',
-                    first_name: 'Sarah',
-                    last_name: 'Johnson',
+                    firstName: 'Sarah',
+                    lastName: 'Johnson',
                     role: 'patient',
                     phone: '+1555-123-4567'
                 })
@@ -91,17 +91,17 @@ describe('End-to-End User Journey Tests', function() {
 
             expect(patientRegister.body.success).to.be.true;
             patientToken = patientRegister.body.token;
-            patientId = patientRegister.body.userId;
+            patientId = patientRegister.body.user.id;
 
             // Step 2: Provider Registration
             console.log('Step 2: Provider Registration');
             const providerRegister = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send({
                     email: 'provider@journey.com',
                     password: 'securePass123',
-                    first_name: 'Dr. Michael',
-                    last_name: 'Thompson',
+                    firstName: 'Dr. Michael',
+                    lastName: 'Thompson',
                     role: 'provider',
                     provider_type: 'pt',
                     license_number: 'PT789012',
@@ -116,19 +116,19 @@ describe('End-to-End User Journey Tests', function() {
             // Step 3: Caregiver Registration
             console.log('Step 3: Caregiver Registration');
             const caregiverRegister = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send({
                     email: 'caregiver@journey.com',
                     password: 'securePass123',
-                    first_name: 'Robert',
-                    last_name: 'Johnson',
+                    firstName: 'Robert',
+                    lastName: 'Johnson',
                     role: 'caregiver'
                 })
                 .expect(201);
 
             expect(caregiverRegister.body.success).to.be.true;
             caregiverToken = caregiverRegister.body.token;
-            caregiverId = caregiverRegister.body.userId;
+            caregiverId = caregiverRegister.body.user.id;
 
             // Step 4: Patient performs room safety assessment
             console.log('Step 4: Room Safety Assessment');
@@ -340,9 +340,9 @@ describe('End-to-End User Journey Tests', function() {
             expect(payment.amount).to.equal(8500);
 
             // Verify subscription record
-            const sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(patientId);
+            const sub = db.prepare('SELECT * FROM payment_subscriptions WHERE user_id = ?').get(patientId);
             expect(sub).to.exist;
-            expect(sub.plan_type).to.equal('basic');
+            expect(sub.plan_name).to.equal('basic');
 
             // Verify caregiver relationship
             const relationship = db.prepare('SELECT * FROM caregiver_relationships WHERE patient_id = ? AND caregiver_id = ?').get(patientId, caregiverId);
@@ -371,11 +371,11 @@ describe('End-to-End User Journey Tests', function() {
 
         beforeEach(async function() {
             // Create provider and patient for clinical workflow testing
-            const providerRes = await request.post('/api/register').send({
+            const providerRes = await request.post('/api/auth/register').send({
                 email: 'clinician@test.com',
                 password: 'testPass123',
-                first_name: 'Dr. Lisa',
-                last_name: 'Chen',
+                firstName: 'Dr. Lisa',
+                lastName: 'Chen',
                 role: 'provider',
                 provider_type: 'ot',
                 license_number: 'OT456789'
@@ -383,16 +383,16 @@ describe('End-to-End User Journey Tests', function() {
             providerToken = providerRes.body.token;
             providerId = providerRes.body.userId;
 
-            const patientRes = await request.post('/api/register').send({
+            const patientRes = await request.post('/api/auth/register').send({
                 email: 'clinical_patient@test.com',
                 password: 'testPass123',
-                first_name: 'Eleanor',
-                last_name: 'Williams',
+                firstName: 'Eleanor',
+                lastName: 'Williams',
                 role: 'patient',
                 phone: '+1555-987-6543'
             });
             patientToken = patientRes.body.token;
-            patientId = patientRes.body.userId;
+            patientId = patientRes.body.user.id;
         });
 
         it('should complete clinical assessment workflow', async function() {
@@ -546,11 +546,11 @@ NEXT APPOINTMENT: 60 days for reassessment
 
             // Test 1: Registration with invalid data
             const invalidRegister = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send({
                     email: 'invalid-email',
                     password: '123', // Too short
-                    first_name: '',
+                    firstName: '',
                     role: 'invalid_role'
                 })
                 .expect(400);
@@ -569,11 +569,11 @@ NEXT APPOINTMENT: 60 days for reassessment
                 .expect(403);
 
             // Test 4: Access to non-existent resources
-            const validUser = await request.post('/api/register').send({
+            const validUser = await request.post('/api/auth/register').send({
                 email: 'error_test@test.com',
                 password: 'testPass123',
-                first_name: 'Error',
-                last_name: 'Test',
+                firstName: 'Error',
+                lastName: 'Test',
                 role: 'patient'
             });
 

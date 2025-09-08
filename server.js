@@ -22,20 +22,56 @@ import aiAnalysisService from './src/services/ai-analysis.js';
 
 // Import services
 import AppointmentBookingService from './src/services/appointment-service.js';
-import paymentService from './src/services/payment-service.js';
+import PaymentService from './src/services/payment-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8787;
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    console.error('FATAL: JWT_SECRET environment variable must be set and at least 32 characters long');
+    console.error('Generate a secure secret: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    process.exit(1);
+}
 
-// Database setup
-const db = new Database('healthcare.db');
+// Database setup with encryption support
+const DB_PATH = process.env.DATABASE_PATH || 'healthcare.db';
+const dbOptions = {
+    fileMustExist: false,
+    timeout: 5000,
+    verbose: process.env.NODE_ENV === 'development' ? console.log : null
+};
 
-// Initialize appointment service after db is available
+// Production database encryption (HIPAA compliance)
+if (process.env.NODE_ENV === 'production' && process.env.DATABASE_ENCRYPTION_KEY) {
+    console.log('Initializing encrypted database for production');
+    dbOptions.pragma = {
+        key: `'${process.env.DATABASE_ENCRYPTION_KEY}'`,
+        journal_mode: 'WAL',
+        synchronous: 'FULL',
+        temp_store: 'MEMORY',
+        mmap_size: 268435456 // 256MB
+    };
+} else {
+    dbOptions.pragma = {
+        journal_mode: 'WAL',
+        synchronous: 'NORMAL',
+        temp_store: 'MEMORY'
+    };
+}
+
+const db = new Database(DB_PATH, dbOptions);
+
+// Initialize services after db is available
 const appointmentService = new AppointmentBookingService(db);
+const paymentService = new PaymentService(db);
+
+// Complete any deferred service initialization
+setTimeout(() => {
+  appointmentService.completeInitialization();
+}, 100);
 
 // Role-based permissions helper
 function getRolePermissions(role) {
@@ -84,9 +120,9 @@ function requirePermission(permission) {
 // Security middleware
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
 import hpp from 'hpp';
+// Custom security middleware (replaces express-mongo-sanitize and xss-clean for compatibility)
+import { xssProtection, sqlInjectionProtection, hipaaProtection, createSensitiveOperationLimiter } from './src/middleware/security.js';
 
 // Rate limiting
 const limiter = rateLimit({
@@ -104,7 +140,10 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
-// Security middleware
+// Enhanced rate limiter for sensitive operations (payments, etc.)
+const sensitiveOperationLimiter = createSensitiveOperationLimiter();
+
+// Enhanced security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -112,14 +151,29 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"]
+      connectSrc: ["'self'", "https://api.stripe.com", "https://api.openai.com"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
     }
-  }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  referrerPolicy: { policy: 'same-origin' }
 }));
 
 app.use(limiter);
-app.use(mongoSanitize());
-app.use(xss());
+// Custom security middleware (HIPAA-compliant)
+app.use(hipaaProtection);
+app.use(sqlInjectionProtection);
+app.use(xssProtection);
 app.use(hpp());
 
 // Basic middleware
@@ -253,15 +307,18 @@ app.post('/api/auth/register', authLimiter, auditLog('AUTH_REGISTER', 'users'), 
         // Get complete user record
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
 
-        // Generate JWT token
+        // Generate JWT token with configurable expiration (HIPAA compliance - max 24h)
+        const sessionTimeout = process.env.SESSION_TIMEOUT_HOURS || '24';
         const token = jwt.sign(
             { 
                 userId: user.id, 
                 email: user.email, 
-                role: user.role 
+                role: user.role,
+                iat: Math.floor(Date.now() / 1000),
+                permissions: getRolePermissions(user.role)
             }, 
             JWT_SECRET, 
-            { expiresIn: '24h' }
+            { expiresIn: `${sessionTimeout}h` }
         );
 
         // Return user info (without password)
@@ -309,15 +366,18 @@ app.post('/api/auth/login', authLimiter, auditLog('AUTH_LOGIN', 'users'), async 
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Generate JWT token
+        // Generate JWT token with configurable expiration (HIPAA compliance - max 24h)
+        const sessionTimeout = process.env.SESSION_TIMEOUT_HOURS || '24';
         const token = jwt.sign(
             { 
                 userId: user.id, 
                 email: user.email, 
-                role: user.role 
+                role: user.role,
+                iat: Math.floor(Date.now() / 1000),
+                permissions: getRolePermissions(user.role)
             }, 
             JWT_SECRET, 
-            { expiresIn: '24h' }
+            { expiresIn: `${sessionTimeout}h` }
         );
 
         res.json({

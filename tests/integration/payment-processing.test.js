@@ -50,16 +50,16 @@ describe('Payment Processing Integration Tests', function() {
         request = supertest(app);
 
         // Create test user
-        const registerResponse = await request.post('/api/register').send({
+        const registerResponse = await request.post('/api/auth/register').send({
             email: 'payment@test.com',
             password: 'testPass123',
-            first_name: 'Payment',
-            last_name: 'User',
+            firstName: 'Payment',
+            lastName: 'User',
             role: 'patient'
         });
         
         userToken = registerResponse.body.token;
-        userId = registerResponse.body.userId;
+        userId = registerResponse.body.user.id;
     });
 
     after(function() {
@@ -72,8 +72,8 @@ describe('Payment Processing Integration Tests', function() {
     beforeEach(function() {
         // Clean payment-related tables before each test
         db.prepare('DELETE FROM payment_transactions').run();
-        db.prepare('DELETE FROM subscriptions').run();
-        db.prepare('DELETE FROM payment_audit_log').run();
+        db.prepare('DELETE FROM payment_subscriptions').run();
+        db.prepare('DELETE FROM audit_logs').run();
     });
 
     describe('Payment Service Health Check', function() {
@@ -277,7 +277,7 @@ describe('Payment Processing Integration Tests', function() {
             expect(response.body.status).to.exist;
 
             // Verify subscription stored in database
-            const subscription = db.prepare('SELECT * FROM subscriptions WHERE id = ?').get(response.body.subscription_id);
+            const subscription = db.prepare('SELECT * FROM payment_subscriptions WHERE id = ?').get(response.body.subscription_id);
             expect(subscription).to.exist;
             expect(subscription.user_id).to.equal(userId);
             expect(subscription.plan_type).to.equal('basic');
@@ -297,7 +297,7 @@ describe('Payment Processing Integration Tests', function() {
 
             expect(response.body.success).to.be.true;
             
-            const subscription = db.prepare('SELECT * FROM subscriptions WHERE id = ?').get(response.body.subscription_id);
+            const subscription = db.prepare('SELECT * FROM payment_subscriptions WHERE id = ?').get(response.body.subscription_id);
             expect(subscription.plan_type).to.equal('premium');
         });
 
@@ -362,7 +362,7 @@ describe('Payment Processing Integration Tests', function() {
             expect(response.body.cancel_at_period_end).to.be.true;
 
             // Verify database update
-            const subscription = db.prepare('SELECT * FROM subscriptions WHERE id = ?').get(subscriptionId);
+            const subscription = db.prepare('SELECT * FROM payment_subscriptions WHERE id = ?').get(subscriptionId);
             expect(subscription.cancel_at_period_end).to.equal(1);
         });
 
@@ -383,11 +383,11 @@ describe('Payment Processing Integration Tests', function() {
 
         it('should prevent unauthorized subscription cancellation', async function() {
             // Create another user
-            const otherUserResponse = await request.post('/api/register').send({
+            const otherUserResponse = await request.post('/api/auth/register').send({
                 email: 'other@payment.com',
                 password: 'testPass123',
-                first_name: 'Other',
-                last_name: 'User',
+                firstName: 'Other',
+                lastName: 'User',
                 role: 'patient'
             });
 
@@ -565,11 +565,11 @@ describe('Payment Processing Integration Tests', function() {
 
         it('should prevent access to other users payment history', async function() {
             // Create another user
-            const otherUserResponse = await request.post('/api/register').send({
+            const otherUserResponse = await request.post('/api/auth/register').send({
                 email: 'other@history.com',
                 password: 'testPass123',
-                first_name: 'Other',
-                last_name: 'User',
+                firstName: 'Other',
+                lastName: 'User',
                 role: 'patient'
             });
 

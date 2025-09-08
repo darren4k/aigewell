@@ -50,22 +50,22 @@ describe('Appointment Booking Integration Tests', function() {
         request = supertest(app);
 
         // Create test users
-        const patientResponse = await request.post('/api/register').send({
+        const patientResponse = await request.post('/api/auth/register').send({
             email: 'patient@appointment.com',
             password: 'testPass123',
-            first_name: 'John',
-            last_name: 'Patient',
+            firstName: 'John',
+            lastName: 'Patient',
             role: 'patient',
             phone: '+1234567890'
         });
         patientToken = patientResponse.body.token;
         patientId = patientResponse.body.userId;
 
-        const providerResponse = await request.post('/api/register').send({
+        const providerResponse = await request.post('/api/auth/register').send({
             email: 'provider@appointment.com',
             password: 'testPass123',
-            first_name: 'Jane',
-            last_name: 'Provider',
+            firstName: 'Jane',
+            lastName: 'Provider',
             role: 'provider',
             provider_type: 'pt',
             license_number: 'PT123456',
@@ -74,11 +74,11 @@ describe('Appointment Booking Integration Tests', function() {
         providerToken = providerResponse.body.token;
         providerId = providerResponse.body.userId;
 
-        const caregiverResponse = await request.post('/api/register').send({
+        const caregiverResponse = await request.post('/api/auth/register').send({
             email: 'caregiver@appointment.com',
             password: 'testPass123',
-            first_name: 'Mary',
-            last_name: 'Caregiver',
+            firstName: 'Mary',
+            lastName: 'Caregiver',
             role: 'caregiver'
         });
         caregiverToken = caregiverResponse.body.token;
@@ -110,7 +110,7 @@ describe('Appointment Booking Integration Tests', function() {
             // Should find our test provider
             const provider = response.body.providers.find(p => p.id === providerId);
             expect(provider).to.exist;
-            expect(provider.first_name).to.equal('Jane');
+            expect(provider.firstName).to.equal('Jane');
             expect(provider.provider_type).to.equal('pt');
             expect(provider.specialties).to.include('geriatric');
         });
@@ -352,11 +352,11 @@ describe('Appointment Booking Integration Tests', function() {
 
         it('should prevent unauthorized appointment access', async function() {
             // Create another patient
-            const otherPatientResponse = await request.post('/api/register').send({
+            const otherPatientResponse = await request.post('/api/auth/register').send({
                 email: 'other@patient.com',
                 password: 'testPass123',
-                first_name: 'Other',
-                last_name: 'Patient',
+                firstName: 'Other',
+                lastName: 'Patient',
                 role: 'patient'
             });
 
@@ -442,11 +442,11 @@ describe('Appointment Booking Integration Tests', function() {
 
         it('should prevent providers from accessing other providers appointments', async function() {
             // Create another provider
-            const otherProviderResponse = await request.post('/api/register').send({
+            const otherProviderResponse = await request.post('/api/auth/register').send({
                 email: 'other@provider.com',
                 password: 'testPass123',
-                first_name: 'Other',
-                last_name: 'Provider',
+                firstName: 'Other',
+                lastName: 'Provider',
                 role: 'provider',
                 provider_type: 'ot'
             });

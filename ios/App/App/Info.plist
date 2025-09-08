@@ -45,5 +45,46 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	
+	<!-- Privacy Usage Descriptions (Required for App Store) -->
+	
+	<!-- Camera usage for room safety assessments -->
+	<key>NSCameraUsageDescription</key>
+	<string>SafeAging uses your camera to take photos of your home for safety assessments. These photos are analyzed by healthcare professionals to identify fall risks and recommend safety improvements. Photos are encrypted and stored securely in compliance with HIPAA privacy standards.</string>
+	
+	<!-- Photo library access for saving assessment images -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SafeAging can save safety assessment photos to your photo library for your personal records. This helps you track improvements and share results with healthcare providers.</string>
+	
+	<!-- Location services for provider matching -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SafeAging uses your location to find nearby physical therapists, occupational therapists, and healthcare providers. Location data is used only for matching services and is not stored or shared with third parties.</string>
+	
+	<!-- Location for emergency services -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SafeAging may access your location for emergency alert services and to connect you with nearby healthcare providers when needed.</string>
+	
+	<!-- Microphone for telehealth consultations -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SafeAging uses your microphone for video consultations with healthcare providers. Audio is transmitted securely and is not recorded or stored on your device.</string>
+	
+	<!-- Health data integration (future feature) -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>SafeAging can integrate with Apple Health to provide comprehensive wellness insights and share relevant health metrics with your healthcare team, with your explicit permission.</string>
+	
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>SafeAging can update Apple Health with your completed assessments and safety improvements to help track your overall wellness progress.</string>
+	
+	<!-- Bluetooth for medical devices (future feature) -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>SafeAging can connect to compatible medical alert devices and health monitors to enhance your safety and provide comprehensive health monitoring.</string>
+	
+	<!-- Local network access for IoT devices -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SafeAging can connect to smart home devices and medical alert systems on your local network to enhance safety monitoring and emergency response capabilities.</string>
+	
+	<!-- Face ID/Touch ID for secure authentication -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>SafeAging uses Face ID to securely authenticate access to your protected health information, ensuring your medical data remains private and secure.</string>
 </dict>
 </plist>

@@ -15,13 +15,34 @@ class AppointmentBookingService {
    * Initialize the appointment service
    */
   initializeService() {
-    // Create real providers if none exist
-    this.ensureProvidersExist();
-    
-    // Initialize provider schedules
-    this.initializeProviderSchedules();
-    
-    console.log('Appointment Booking Service initialized');
+    try {
+      // Create real providers if none exist
+      this.ensureProvidersExist();
+      
+      // Initialize provider schedules
+      this.initializeProviderSchedules();
+      
+      console.log('Appointment Booking Service initialized');
+    } catch (error) {
+      console.log('Appointment service initialization deferred (database not ready)');
+      this.initializationDeferred = true;
+    }
+  }
+
+  /**
+   * Complete deferred initialization
+   */
+  completeInitialization() {
+    if (this.initializationDeferred) {
+      try {
+        this.ensureProvidersExist();
+        this.initializeProviderSchedules();
+        this.initializationDeferred = false;
+        console.log('Appointment Booking Service initialization completed');
+      } catch (error) {
+        console.error('Failed to complete appointment service initialization:', error.message);
+      }
+    }
   }
 
   /**

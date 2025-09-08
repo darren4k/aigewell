@@ -56,9 +56,23 @@ describe('Authentication Integration Tests', function() {
     });
 
     beforeEach(function() {
-        // Clean users table before each test
-        db.prepare('DELETE FROM users').run();
+        // Clean dependent tables first to avoid foreign key constraints
+        db.prepare('DELETE FROM caregiver_relationships').run();
+        db.prepare('DELETE FROM assessments').run();
+        db.prepare('DELETE FROM clinical_assessments').run();
+        db.prepare('DELETE FROM safety_plans').run();
+        db.prepare('DELETE FROM appointments').run();
+        db.prepare('DELETE FROM user_equipment').run();
+        db.prepare('DELETE FROM alerts').run();
+        db.prepare('DELETE FROM provider_schedules').run();
+        db.prepare('DELETE FROM payment_subscriptions').run();
+        db.prepare('DELETE FROM payment_transactions').run();
+        db.prepare('DELETE FROM payment_methods').run();
+        db.prepare('DELETE FROM billing_addresses').run();
+        db.prepare('DELETE FROM equipment_orders').run();
         db.prepare('DELETE FROM audit_logs').run();
+        // Finally delete users
+        db.prepare('DELETE FROM users').run();
     });
 
     describe('User Registration', function() {
@@ -66,19 +80,20 @@ describe('Authentication Integration Tests', function() {
             const userData = {
                 email: 'test@patient.com',
                 password: 'securePass123',
-                first_name: 'John',
-                last_name: 'Doe',
+                firstName: 'John',
+                lastName: 'Doe',
                 role: 'patient',
                 phone: '+1234567890'
             };
 
             const response = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send(userData)
-                .expect(201);
+                .expect(200);
 
-            expect(response.body).to.have.property('success', true);
-            expect(response.body).to.have.property('userId');
+            expect(response.body).to.have.property('message', 'Account created successfully');
+            expect(response.body).to.have.property('user');
+            expect(response.body.user).to.have.property('id');
             expect(response.body).to.have.property('token');
 
             // Verify user in database
@@ -92,20 +107,20 @@ describe('Authentication Integration Tests', function() {
             const providerData = {
                 email: 'provider@test.com',
                 password: 'securePass123',
-                first_name: 'Jane',
-                last_name: 'Smith',
+                firstName: 'Jane',
+                lastName: 'Smith',
                 role: 'provider',
-                provider_type: 'pt',
-                license_number: 'PT123456',
+                providerType: 'pt',
+                licenseNumber: 'PT123456',
                 specialties: JSON.stringify(['geriatric', 'home_safety'])
             };
 
             const response = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send(providerData)
-                .expect(201);
+                .expect(200);
 
-            expect(response.body.success).to.be.true;
+            expect(response.body).to.have.property('message');
 
             const user = db.prepare('SELECT * FROM users WHERE email = ?').get(providerData.email);
             expect(user.provider_type).to.equal('pt');
@@ -116,36 +131,36 @@ describe('Authentication Integration Tests', function() {
             const userData = {
                 email: 'duplicate@test.com',
                 password: 'pass123',
-                first_name: 'Test',
-                last_name: 'User',
+                firstName: 'Test',
+                lastName: 'User',
                 role: 'patient'
             };
 
             // First registration should succeed
-            await request.post('/api/register').send(userData).expect(201);
+            await request.post('/api/auth/register').send(userData).expect(200);
 
             // Second registration should fail
             const response = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send(userData)
-                .expect(400);
+                .expect(409);
 
-            expect(response.body.success).to.be.false;
+            expect(response.body).to.have.property('error');
             expect(response.body.error).to.include('already exists');
         });
 
         it('should validate required fields', async function() {
             const incompleteData = {
                 email: 'incomplete@test.com',
-                // Missing password, first_name, last_name
+                // Missing password, firstName, lastName
             };
 
             const response = await request
-                .post('/api/register')
+                .post('/api/auth/register')
                 .send(incompleteData)
                 .expect(400);
 
-            expect(response.body.success).to.be.false;
+            expect(response.body).to.have.property('error');
             expect(response.body.error).to.include('required');
         });
     });
@@ -153,25 +168,25 @@ describe('Authentication Integration Tests', function() {
     describe('User Login', function() {
         beforeEach(async function() {
             // Create test user for login tests
-            await request.post('/api/register').send({
+            await request.post('/api/auth/register').send({
                 email: 'login@test.com',
                 password: 'testPass123',
-                first_name: 'Test',
-                last_name: 'User',
+                firstName: 'Test',
+                lastName: 'User',
                 role: 'patient'
             });
         });
 
         it('should login with valid credentials', async function() {
             const response = await request
-                .post('/api/login')
+                .post('/api/auth/login')
                 .send({
                     email: 'login@test.com',
                     password: 'testPass123'
                 })
                 .expect(200);
 
-            expect(response.body.success).to.be.true;
+            expect(response.body).to.have.property('message');
             expect(response.body).to.have.property('token');
             expect(response.body.user).to.have.property('role', 'patient');
             expect(response.body.user).to.not.have.property('password_hash');
@@ -179,27 +194,27 @@ describe('Authentication Integration Tests', function() {
 
         it('should reject login with invalid password', async function() {
             const response = await request
-                .post('/api/login')
+                .post('/api/auth/login')
                 .send({
                     email: 'login@test.com',
                     password: 'wrongPassword'
                 })
                 .expect(401);
 
-            expect(response.body.success).to.be.false;
+            expect(response.body).to.have.property('error');
             expect(response.body.error).to.include('Invalid');
         });
 
         it('should reject login for non-existent user', async function() {
             const response = await request
-                .post('/api/login')
+                .post('/api/auth/login')
                 .send({
                     email: 'nonexistent@test.com',
                     password: 'anyPassword'
                 })
                 .expect(401);
 
-            expect(response.body.success).to.be.false;
+            expect(response.body).to.have.property('error');
         });
     });
 
@@ -208,70 +223,71 @@ describe('Authentication Integration Tests', function() {
         let userId;
 
         beforeEach(async function() {
-            const registerResponse = await request.post('/api/register').send({
+            const registerResponse = await request.post('/api/auth/register').send({
                 email: 'jwt@test.com',
                 password: 'testPass123',
-                first_name: 'JWT',
-                last_name: 'User',
+                firstName: 'JWT',
+                lastName: 'User',
                 role: 'patient'
             });
             validToken = registerResponse.body.token;
-            userId = registerResponse.body.userId;
+            userId = registerResponse.body.user.id;
         });
 
         it('should access protected route with valid token', async function() {
             const response = await request
-                .get('/api/dashboard')
+                .get('/api/auth/profile')
                 .set('Authorization', `Bearer ${validToken}`)
                 .expect(200);
 
-            expect(response.body.success).to.be.true;
+            expect(response.body).to.have.property('user');
             expect(response.body.user).to.have.property('id', userId);
         });
 
         it('should reject access without token', async function() {
             await request
-                .get('/api/dashboard')
+                .get('/api/auth/profile')
                 .expect(401);
         });
 
         it('should reject access with invalid token', async function() {
             await request
-                .get('/api/dashboard')
+                .get('/api/auth/profile')
                 .set('Authorization', 'Bearer invalid_token')
                 .expect(403);
         });
     });
 
     describe('Role-Based Access Control', function() {
-        let patientToken, providerToken, caregiverToken;
+        let patientToken, providerToken, caregiverToken, patientId;
 
         beforeEach(async function() {
             // Create users with different roles
-            const patientRes = await request.post('/api/register').send({
+            const patientRes = await request.post('/api/auth/register').send({
                 email: 'patient@rbac.com',
                 password: 'pass123',
-                first_name: 'Patient',
-                last_name: 'User',
+                firstName: 'Patient',
+                lastName: 'User',
                 role: 'patient'
             });
             patientToken = patientRes.body.token;
+            patientId = patientRes.body.user.id;
 
-            const providerRes = await request.post('/api/register').send({
+            const providerRes = await request.post('/api/auth/register').send({
                 email: 'provider@rbac.com',
                 password: 'pass123',
-                first_name: 'Provider',
-                last_name: 'User',
+                firstName: 'Provider',
+                lastName: 'User',
                 role: 'provider',
                 provider_type: 'pt'
             });
             providerToken = providerRes.body.token;
 
-            const caregiverRes = await request.post('/api/register').send({
+            const caregiverRes = await request.post('/api/auth/register').send({
                 email: 'caregiver@rbac.com',
                 password: 'pass123',
-                first_name: 'Caregiver',
-                last_name: 'User',
+                firstName: 'Caregiver',
+                lastName: 'User',
                 role: 'caregiver'
             });
             caregiverToken = caregiverRes.body.token;
@@ -283,22 +299,22 @@ describe('Authentication Integration Tests', function() {
                 .set('Authorization', `Bearer ${providerToken}`)
                 .expect(200);
 
-            expect(response.body.success).to.be.true;
+            expect(response.body).to.have.property('success', true);
         });
 
         it('should allow patients to book appointments', async function() {
             const response = await request
-                .get('/api/appointments/patient@rbac.com')
+                .get(`/api/appointments/${patientId}`)
                 .set('Authorization', `Bearer ${patientToken}`)
                 .expect(200);
 
-            expect(response.body.success).to.be.true;
+            expect(response.body).to.have.property('appointments');
         });
 
         it('should enforce role permissions correctly', async function() {
             // Patient trying to access admin functions should be controlled
             const response = await request
-                .get('/api/dashboard')
+                .get('/api/auth/profile')
                 .set('Authorization', `Bearer ${patientToken}`)
                 .expect(200);
 
@@ -311,18 +327,18 @@ describe('Authentication Integration Tests', function() {
         let userToken;
 
         beforeEach(async function() {
-            const registerResponse = await request.post('/api/register').send({
+            const registerResponse = await request.post('/api/auth/register').send({
                 email: 'audit@test.com',
                 password: 'testPass123',
-                first_name: 'Audit',
-                last_name: 'User',
+                firstName: 'Audit',
+                lastName: 'User',
                 role: 'patient'
             });
             userToken = registerResponse.body.token;
         });
 
         it('should log successful login attempts', async function() {
-            await request.post('/api/login').send({
+            await request.post('/api/auth/login').send({
                 email: 'audit@test.com',
                 password: 'testPass123'
             }).expect(200);
@@ -333,7 +349,7 @@ describe('Authentication Integration Tests', function() {
         });
 
         it('should log failed login attempts', async function() {
-            await request.post('/api/login').send({
+            await request.post('/api/auth/login').send({
                 email: 'audit@test.com',
                 password: 'wrongPassword'
             }).expect(401);
@@ -344,7 +360,7 @@ describe('Authentication Integration Tests', function() {
 
         it('should log protected resource access', async function() {
             await request
-                .get('/api/dashboard')
+                .get('/api/auth/profile')
                 .set('Authorization', `Bearer ${userToken}`)
                 .expect(200);
 

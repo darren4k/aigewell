@@ -65,16 +65,16 @@ describe('AI Room Analysis Integration Tests', function() {
         request = supertest(app);
 
         // Create test user and get token
-        const registerResponse = await request.post('/api/register').send({
+        const registerResponse = await request.post('/api/auth/register').send({
             email: 'ai_test@example.com',
             password: 'testPass123',
-            first_name: 'AI',
-            last_name: 'Tester',
+            firstName: 'AI',
+            lastName: 'Tester',
             role: 'patient'
         });
         
         userToken = registerResponse.body.token;
-        userId = registerResponse.body.userId;
+        userId = registerResponse.body.user.id;
     });
 
     after(function() {
@@ -308,11 +308,11 @@ describe('AI Room Analysis Integration Tests', function() {
 
         it('should prevent access to other users assessments', async function() {
             // Create another user
-            const otherUserResponse = await request.post('/api/register').send({
+            const otherUserResponse = await request.post('/api/auth/register').send({
                 email: 'other_user@example.com',
                 password: 'testPass123',
-                first_name: 'Other',
-                last_name: 'User',
+                firstName: 'Other',
+                lastName: 'User',
                 role: 'patient'
             });
 

@@ -196,6 +196,9 @@ CREATE TABLE provider_schedules (
     break_start_time TIME,
     break_end_time TIME,
     max_appointments INTEGER DEFAULT 8,
+    -- Additional columns for appointment service compatibility
+    available_days TEXT, -- JSON array of available days
+    slot_duration INTEGER DEFAULT 30, -- Duration in minutes
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (provider_id) REFERENCES users(id)
@@ -228,3 +231,125 @@ CREATE INDEX idx_alerts_user_id ON alerts(user_id);
 CREATE INDEX idx_alerts_is_read ON alerts(is_read);
 CREATE INDEX idx_caregiver_relationships_patient_id ON caregiver_relationships(patient_id);
 CREATE INDEX idx_caregiver_relationships_caregiver_id ON caregiver_relationships(caregiver_id);
+
+-- Payment subscriptions and billing
+DROP TABLE IF EXISTS payment_subscriptions;
+CREATE TABLE payment_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    stripe_subscription_id TEXT UNIQUE NOT NULL,
+    stripe_customer_id TEXT NOT NULL,
+    plan_name TEXT NOT NULL,
+    plan_price DECIMAL(10,2) NOT NULL,
+    billing_cycle TEXT DEFAULT 'monthly' CHECK (billing_cycle IN ('monthly', 'yearly')),
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'past_due', 'canceled', 'unpaid', 'trialing')),
+    current_period_start DATETIME NOT NULL,
+    current_period_end DATETIME NOT NULL,
+    trial_end DATETIME,
+    cancel_at_period_end BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Payment transactions and history
+DROP TABLE IF EXISTS payment_transactions;
+CREATE TABLE payment_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    stripe_payment_intent_id TEXT UNIQUE,
+    stripe_charge_id TEXT,
+    subscription_id INTEGER,
+    amount DECIMAL(10,2) NOT NULL,
+    currency TEXT DEFAULT 'usd',
+    status TEXT NOT NULL CHECK (status IN ('pending', 'succeeded', 'failed', 'canceled', 'refunded')),
+    payment_method TEXT, -- 'card', 'ach', 'bank_transfer'
+    description TEXT,
+    metadata TEXT, -- JSON for additional transaction details
+    stripe_fee DECIMAL(10,2),
+    net_amount DECIMAL(10,2),
+    refunded_amount DECIMAL(10,2) DEFAULT 0,
+    failure_reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (subscription_id) REFERENCES payment_subscriptions(id)
+);
+
+-- Payment methods stored for users
+DROP TABLE IF EXISTS payment_methods;
+CREATE TABLE payment_methods (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    stripe_payment_method_id TEXT UNIQUE NOT NULL,
+    type TEXT NOT NULL, -- 'card', 'bank_account', 'ach_debit'
+    brand TEXT, -- 'visa', 'mastercard', etc.
+    last4 TEXT,
+    exp_month INTEGER,
+    exp_year INTEGER,
+    is_default BOOLEAN DEFAULT 0,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Billing addresses
+DROP TABLE IF EXISTS billing_addresses;
+CREATE TABLE billing_addresses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    line1 TEXT NOT NULL,
+    line2 TEXT,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    postal_code TEXT NOT NULL,
+    country TEXT DEFAULT 'US',
+    is_primary BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Equipment orders and fulfillment
+DROP TABLE IF EXISTS equipment_orders;
+CREATE TABLE equipment_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    transaction_id INTEGER,
+    total_amount DECIMAL(10,2) NOT NULL,
+    shipping_address TEXT, -- JSON object with address
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'returned')),
+    tracking_number TEXT,
+    shipping_carrier TEXT,
+    estimated_delivery DATE,
+    delivered_at DATETIME,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (transaction_id) REFERENCES payment_transactions(id)
+);
+
+-- Order items
+DROP TABLE IF EXISTS equipment_order_items;
+CREATE TABLE equipment_order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    equipment_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES equipment_orders(id),
+    FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+);
+
+-- Create payment-related indexes
+CREATE INDEX idx_payment_subscriptions_user_id ON payment_subscriptions(user_id);
+CREATE INDEX idx_payment_subscriptions_status ON payment_subscriptions(status);
+CREATE INDEX idx_payment_transactions_user_id ON payment_transactions(user_id);
+CREATE INDEX idx_payment_transactions_status ON payment_transactions(status);
+CREATE INDEX idx_payment_methods_user_id ON payment_methods(user_id);
+CREATE INDEX idx_equipment_orders_user_id ON equipment_orders(user_id);
+CREATE INDEX idx_equipment_orders_status ON equipment_orders(status);
