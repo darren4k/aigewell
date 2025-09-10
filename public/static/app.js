@@ -330,6 +330,13 @@ function renderApp() {
                                 </span>
                             </div>
                         ` : ''}
+                        <!-- V2 Enhancement: Revenue Widget for Providers -->
+                        ${userRole === 'provider' ? `
+                            <div class="revenue-widget bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-2 rounded-lg text-white hidden md:flex items-center space-x-2">
+                                <i class="fas fa-dollar-sign text-sm"></i>
+                                <span class="text-sm font-semibold">$12,750</span>
+                            </div>
+                        ` : ''}
                         <div class="text-right hidden md:block">
                             <p class="text-sm opacity-90">Welcome back,</p>
                             <p class="font-semibold">${currentUser ? currentUser.first_name || currentUser.name : 'Guest'}</p>
@@ -462,6 +469,9 @@ function showView(view) {
             break;
         case 'ptot':
             showPTOTDashboard();
+            break;
+        case 'marketplace':
+            showMarketplaceDashboard();
             break;
     }
     
@@ -1393,4 +1403,141 @@ async function addCaregiver() {
     } catch (error) {
         console.error('Failed to add caregiver');
     }
+}
+
+// PT Marketplace Dashboard - V2 Enhancement
+function showMarketplaceDashboard() {
+    const content = document.getElementById('mainContent');
+    const userRole = RoleBasedNavigation.getCurrentUserRole();
+    
+    content.innerHTML = `
+        <div class="marketplace-dashboard">
+            <!-- Marketplace Header -->
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-lg mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold">PT Marketplace</h1>
+                        <p class="text-indigo-100 mt-1">Your virtual practice earnings & analytics</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold">$12,750</div>
+                        <div class="text-sm text-indigo-200">Total Earnings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-dollar-sign text-3xl text-green-500"></i>
+                        <span class="text-2xl font-bold text-green-600">$12,750</span>
+                    </div>
+                    <h3 class="text-gray-600">Total Earnings</h3>
+                    <p class="text-sm text-green-600 mt-1">+15% this month</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-chart-line text-3xl text-blue-500"></i>
+                        <span class="text-2xl font-bold text-blue-600">$3,825</span>
+                    </div>
+                    <h3 class="text-gray-600">This Month</h3>
+                    <p class="text-sm text-blue-600 mt-1">34 sessions</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-users text-3xl text-purple-500"></i>
+                        <span class="text-2xl font-bold text-purple-600">68</span>
+                    </div>
+                    <h3 class="text-gray-600">Active Patients</h3>
+                    <p class="text-sm text-purple-600 mt-1">4.9★ rating</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-clock text-3xl text-orange-500"></i>
+                        <span class="text-2xl font-bold text-orange-600">127</span>
+                    </div>
+                    <h3 class="text-gray-600">Hours This Month</h3>
+                    <p class="text-sm text-orange-600 mt-1">+8% vs last month</p>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Sessions</h2>
+                    <div class="space-y-4">
+                        ${renderRecentMarketplaceSessions()}
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Performance Metrics</h2>
+                    <div class="space-y-4">
+                        ${renderMarketplaceMetrics()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderRecentMarketplaceSessions() {
+    const sessions = [
+        { patient: 'Mary Johnson', type: 'Balance Assessment', amount: '$85', date: '2 hours ago', rating: 5 },
+        { patient: 'Robert Smith', type: 'Fall Prevention', amount: '$120', date: '4 hours ago', rating: 5 },
+        { patient: 'Alice Brown', type: 'Mobility Training', amount: '$95', date: '1 day ago', rating: 4 },
+        { patient: 'David Wilson', type: 'Home Safety Review', amount: '$75', date: '2 days ago', rating: 5 }
+    ];
+
+    return sessions.map(session => `
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-user text-indigo-600"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-sm">${session.patient}</p>
+                    <p class="text-xs text-gray-500">${session.type} • ${session.date}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-green-600">${session.amount}</p>
+                <div class="flex items-center">
+                    ${Array(session.rating).fill().map(() => '<i class="fas fa-star text-yellow-400 text-xs"></i>').join('')}
+                    ${Array(5-session.rating).fill().map(() => '<i class="far fa-star text-gray-300 text-xs"></i>').join('')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderMarketplaceMetrics() {
+    return `
+        <div class="space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Average Session Rate</span>
+                <span class="font-semibold">$95/hour</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Patient Satisfaction</span>
+                <span class="font-semibold text-green-600">4.9/5.0</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Response Time</span>
+                <span class="font-semibold text-blue-600">< 2 hours</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Completion Rate</span>
+                <span class="font-semibold text-purple-600">98%</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Repeat Customers</span>
+                <span class="font-semibold text-orange-600">78%</span>
+            </div>
+        </div>
+    `;
 }

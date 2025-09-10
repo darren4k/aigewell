@@ -77,7 +77,8 @@ const ROLE_NAVIGATION = {
       { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', path: '/dashboard' },
       { id: 'patients', label: 'Patients', icon: 'fas fa-users', path: '/patients' },
       { id: 'schedule', label: 'Schedule', icon: 'fas fa-calendar-alt', path: '/schedule' },
-      { id: 'assessments', label: 'Clinical', icon: 'fas fa-stethoscope', path: '/clinical' }
+      { id: 'assessments', label: 'Clinical', icon: 'fas fa-stethoscope', path: '/clinical' },
+      { id: 'marketplace', label: 'PT Marketplace', icon: 'fas fa-store', path: '/marketplace', badge: 'NEW' }
     ],
     secondary: [
       { id: 'analytics', label: 'Analytics', icon: 'fas fa-analytics', path: '/analytics' },
@@ -383,6 +384,17 @@ function renderProviderDashboard(user, permissions) {
                 <span class="font-semibold">28 visits</span>
               </div>
             </div>
+            <!-- V2 Enhancement: PT Marketplace Earnings -->
+            <div class="border-t pt-4 mt-4">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-600">PT Marketplace Earnings</span>
+                <span class="font-semibold text-green-600">$12,750</span>
+              </div>
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>This month: $3,825</span>
+                <span class="text-green-600">+15%</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -415,10 +427,11 @@ function renderRoleNavigation(role, isMobile = false) {
     <div class="flex ${containerClass}">
       ${navigation.primary.map(item => `
         <button onclick="showView('${item.id}')" 
-                class="${baseClass} ${currentView === item.id ? 'active' : ''}"
+                class="${baseClass} ${currentView === item.id ? 'active' : ''} ${item.badge ? 'relative' : ''}"
                 data-role-required="${role}">
           <i class="${item.icon} ${isMobile ? 'nav-icon' : 'mr-2'}"></i>
           <span>${item.label}</span>
+          ${item.badge ? `<span class="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full px-2 py-0.5 font-semibold">${item.badge}</span>` : ''}
         </button>
       `).join('')}
       

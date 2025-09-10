@@ -1,8 +1,11 @@
 app:
-  name: safeaging-superagents
+  name: safeaging-disruption-platform
+  version: "2.0"
+  baseline: "superclaude-v1.0-stable"
   env: ${APP_ENV:dev}
   region: us-east-1
   logLevel: info
+  mission: "Healthcare Disruption Platform - Eliminate 90% of fall-related costs"
   redact: [apiKey, accessToken, token, cookie, password]
   piiFields: [email, phone, address, ssn, healthRecord]
 
